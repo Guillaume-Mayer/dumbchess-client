@@ -1,6 +1,6 @@
 ##Little chess game with (dumb) AI
 
-#####It´s a didactical project, Idit it to learn Javascript.
+#####It´s a didactical project, I dit it to learn Javascript.
 
 * It uses a [negamax with alpha-beta pruning algorythm](https://en.wikipedia.org/wiki/Negamax)
 * HTML5
