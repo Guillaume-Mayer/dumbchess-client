@@ -1,0 +1,185 @@
+body {
+	margin: 0;
+	overflow: hidden;
+	font-family: "Indie Flower";
+}
+
+a {
+	color: blue;
+	text-decoration: none;
+}
+
+a:hover {
+	color: blue;
+	text-decoration: underline;
+}
+
+#main {
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100%;
+}
+
+.pan-side {
+	background-color: #999999;
+	flex: 1 1 0;
+	min-width: 0;
+	min-height: 0;
+	padding: 1%;
+}
+
+#pan-main {
+	width: 100vmin;
+	height: 100vmin;
+}
+
+@media all and (orientation:landscape) {
+	#main {
+  		flex-direction:row;
+	}
+}
+
+.tile-w {
+	fill: white;
+}
+
+.tile-b {
+	fill: black;
+}
+
+.tile-selected {
+	fill: blue;
+}
+
+.tile2-selected {
+	fill: green;
+}
+
+.tile-checked {
+	fill: red;
+}
+
+.token {
+	display: inline-block;
+	box-shadow: 7px 7px 5px #888888;
+	margin: 1px 1px 1px 1px;
+	border: 1px dotted grey;
+	padding: 0px 3px 0px 3px;
+	background-color: #c2fb30;
+	-webkit-user-select: none;
+	cursor: default;
+}
+
+.action {
+	cursor: pointer;
+}
+.action:hover {
+	background-color: #77ff11;
+	font-weight: 600;
+}
+
+.White {
+	background-color: white;
+	font-size: 2em;
+	color: black;
+}
+.White::before {
+	content: "White ";
+}
+
+.Black {
+	background-color: black;
+	font-size: 2em;
+	color: white;
+}
+.Black::before {
+	content: "Black ";
+}
+
+.legal {
+	pointer-events: none;
+}
+
+.green {
+	fill: #00BB00;
+}
+
+.red {
+	fill: red;
+}
+
+.ON {
+	background-color: green;
+	cursor: pointer;
+}
+.ON::after {
+	content: "ON";
+}
+
+.OFF {
+	background-color: red;
+	cursor: pointer;
+}
+.OFF::after {
+	content: "OFF";
+}
+
+.rotate180 {
+	transform: rotate(180deg);
+}
+
+/* Popup background spans acroos the whole page
+   it's dark and disallow mouse events */
+.popup {
+	display: none;
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background: rgba(0, 0, 0, 0.6);
+	pointer-events: none;
+}
+
+.popup > div {
+	position: absolute;
+	left: calc(50% - 21vmin);
+	top: calc(50% - 25.5vmin);
+	padding: 1vmin;
+	border-radius: 10px;
+	background: #ddd;
+	background: linear-gradient(#ddd, #888);
+	opacity: 0.9;
+}
+
+.popup > div > p {
+	margin: 0;
+	padding: 0;
+	height: 4vmin;
+}
+
+.popup > div > svg {
+	width: 40vmin;
+	height: 40vmin;
+}
+
+#thinking {
+	font-size: 1.7em;
+	background-color: orange;
+	text-align: center;
+	visibility: hidden;
+}
+
+.win {
+	fill: green;
+	stroke: lime;
+	font-size: 3.6em;
+}
+
+.lose {
+	fill: red;
+	stroke: pink;
+	font-size: 3.6em;
+}

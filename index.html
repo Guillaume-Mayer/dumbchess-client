@@ -1,0 +1,170 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8"/>
+	<meta name="author" content="Guillaume Mayer"/>
+	<meta name="keywords" content="Dumb Chess, Chess, Desarrollador, Analista, Programador, PowerBuilder, Power Builder, Java, Santiago, Chile"/>
+	<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Indie+Flower"/>
+	<link rel="stylesheet" type="text/css" href="css/chess.css"/>
+	<title>Dumb Chess</title>
+</head>
+<body>
+	<div id="main">
+		<div id="pan-side1" class="pan-side">
+			<div class="token"><h2>Welcome to</h2></div>
+			<div class="token"><h1>Dumb Chess</h1></div>
+			<div class="token"><small>v0.0.0.83917</small></div>
+			<div class="token"><p>The most stupid chess engine on the internet</p></div>
+			<div class="token"><p>I'm looking for a job</p></div>
+			<div class="token"><a href="http://gm77.alwaysdata.net/cv" target="_blank">Have a look at my resume</a></div>
+			<div class="token"><small>Pleeeeease!</small></div>
+			<div class="token"><p>This is based on</p></div>
+			<div class="token"><p>HTML5</p></div>
+			<div class="token"><p>SVG</p></div>
+			<div class="token"><p>and JavaScript</p></div>
+			<div class="token"><small>(Hand-made)</small></div>
+		</div>
+		<div id="pan-main">
+			<svg id="svg" width="100%" height="100%">
+				<g id="tiles">
+					<rect x="0%" y="87.5%" width="12.5%" height="12.5%" id="a1" class="tile-w" data-row="0" data-col="0"/>
+					<rect x="12.5%" y="87.5%" width="12.5%" height="12.5%" id="b1" class="tile-b" data-row="0" data-col="1"/>
+					<rect x="25%" y="87.5%" width="12.5%" height="12.5%" id="c1" class="tile-w" data-row="0" data-col="2"/>
+					<rect x="37.5%" y="87.5%" width="12.5%" height="12.5%" id="d1" class="tile-b" data-row="0" data-col="3"/>
+					<rect x="50%" y="87.5%" width="12.5%" height="12.5%" id="e1" class="tile-w" data-row="0" data-col="4"/>
+					<rect x="62.5%" y="87.5%" width="12.5%" height="12.5%" id="f1" class="tile-b" data-row="0" data-col="5"/>
+					<rect x="75%" y="87.5%" width="12.5%" height="12.5%" id="g1" class="tile-w" data-row="0" data-col="6"/>
+					<rect x="87.5%" y="87.5%" width="12.5%" height="12.5%" id="h1" class="tile-b" data-row="0" data-col="7"/>
+					<rect x="0%" y="75%" width="12.5%" height="12.5%" id="a2" class="tile-b" data-row="1" data-col="0"/>
+					<rect x="12.5%" y="75%" width="12.5%" height="12.5%" id="b2" class="tile-w" data-row="1" data-col="1"/>
+					<rect x="25%" y="75%" width="12.5%" height="12.5%" id="c2" class="tile-b" data-row="1" data-col="2"/>
+					<rect x="37.5%" y="75%" width="12.5%" height="12.5%" id="d2" class="tile-w" data-row="1" data-col="3"/>
+					<rect x="50%" y="75%" width="12.5%" height="12.5%" id="e2" class="tile-b" data-row="1" data-col="4"/>
+					<rect x="62.5%" y="75%" width="12.5%" height="12.5%" id="f2" class="tile-w" data-row="1" data-col="5"/>
+					<rect x="75%" y="75%" width="12.5%" height="12.5%" id="g2" class="tile-b" data-row="1" data-col="6"/>
+					<rect x="87.5%" y="75%" width="12.5%" height="12.5%" id="h2" class="tile-w" data-row="1" data-col="7"/>
+					<rect x="0%" y="62.5%" width="12.5%" height="12.5%" id="a3" class="tile-w" data-row="2" data-col="0"/>
+					<rect x="12.5%" y="62.5%" width="12.5%" height="12.5%" id="b3" class="tile-b" data-row="2" data-col="1"/>
+					<rect x="25%" y="62.5%" width="12.5%" height="12.5%" id="c3" class="tile-w" data-row="2" data-col="2"/>
+					<rect x="37.5%" y="62.5%" width="12.5%" height="12.5%" id="d3" class="tile-b" data-row="2" data-col="3"/>
+					<rect x="50%" y="62.5%" width="12.5%" height="12.5%" id="e3" class="tile-w" data-row="2" data-col="4"/>
+					<rect x="62.5%" y="62.5%" width="12.5%" height="12.5%" id="f3" class="tile-b" data-row="2" data-col="5"/>
+					<rect x="75%" y="62.5%" width="12.5%" height="12.5%" id="g3" class="tile-w" data-row="2" data-col="6"/>
+					<rect x="87.5%" y="62.5%" width="12.5%" height="12.5%" id="h3" class="tile-b" data-row="2" data-col="7"/>
+					<rect x="0%" y="50%" width="12.5%" height="12.5%" id="a4" class="tile-b" data-row="3" data-col="0"/>
+					<rect x="12.5%" y="50%" width="12.5%" height="12.5%" id="b4" class="tile-w" data-row="3" data-col="1"/>
+					<rect x="25%" y="50%" width="12.5%" height="12.5%" id="c4" class="tile-b" data-row="3" data-col="2"/>
+					<rect x="37.5%" y="50%" width="12.5%" height="12.5%" id="d4" class="tile-w" data-row="3" data-col="3"/>
+					<rect x="50%" y="50%" width="12.5%" height="12.5%" id="e4" class="tile-b" data-row="3" data-col="4"/>
+					<rect x="62.5%" y="50%" width="12.5%" height="12.5%" id="f4" class="tile-w" data-row="3" data-col="5"/>
+					<rect x="75%" y="50%" width="12.5%" height="12.5%" id="g4" class="tile-b" data-row="3" data-col="6"/>
+					<rect x="87.5%" y="50%" width="12.5%" height="12.5%" id="h4" class="tile-w" data-row="3" data-col="7"/>
+					<rect x="0%" y="37.5%" width="12.5%" height="12.5%" id="a5" class="tile-w" data-row="4" data-col="0"/>
+					<rect x="12.5%" y="37.5%" width="12.5%" height="12.5%" id="b5" class="tile-b" data-row="4" data-col="1"/>
+					<rect x="25%" y="37.5%" width="12.5%" height="12.5%" id="c5" class="tile-w" data-row="4" data-col="2"/>
+					<rect x="37.5%" y="37.5%" width="12.5%" height="12.5%" id="d5" class="tile-b" data-row="4" data-col="3"/>
+					<rect x="50%" y="37.5%" width="12.5%" height="12.5%" id="e5" class="tile-w" data-row="4" data-col="4"/>
+					<rect x="62.5%" y="37.5%" width="12.5%" height="12.5%" id="f5" class="tile-b" data-row="4" data-col="5"/>
+					<rect x="75%" y="37.5%" width="12.5%" height="12.5%" id="g5" class="tile-w" data-row="4" data-col="6"/>
+					<rect x="87.5%" y="37.5%" width="12.5%" height="12.5%" id="h5" class="tile-b" data-row="4" data-col="7"/>
+					<rect x="0%" y="25%" width="12.5%" height="12.5%" id="a6" class="tile-b" data-row="5" data-col="0"/>
+					<rect x="12.5%" y="25%" width="12.5%" height="12.5%" id="b6" class="tile-w" data-row="5" data-col="1"/>
+					<rect x="25%" y="25%" width="12.5%" height="12.5%" id="c6" class="tile-b" data-row="5" data-col="2"/>
+					<rect x="37.5%" y="25%" width="12.5%" height="12.5%" id="d6" class="tile-w" data-row="5" data-col="3"/>
+					<rect x="50%" y="25%" width="12.5%" height="12.5%" id="e6" class="tile-b" data-row="5" data-col="4"/>
+					<rect x="62.5%" y="25%" width="12.5%" height="12.5%" id="f6" class="tile-w" data-row="5" data-col="5"/>
+					<rect x="75%" y="25%" width="12.5%" height="12.5%" id="g6" class="tile-b" data-row="5" data-col="6"/>
+					<rect x="87.5%" y="25%" width="12.5%" height="12.5%" id="h6" class="tile-w" data-row="5" data-col="7"/>
+					<rect x="0%" y="12.5%" width="12.5%" height="12.5%" id="a7" class="tile-w" data-row="6" data-col="0"/>
+					<rect x="12.5%" y="12.5%" width="12.5%" height="12.5%" id="b7" class="tile-b" data-row="6" data-col="1"/>
+					<rect x="25%" y="12.5%" width="12.5%" height="12.5%" id="c7" class="tile-w" data-row="6" data-col="2"/>
+					<rect x="37.5%" y="12.5%" width="12.5%" height="12.5%" id="d7" class="tile-b" data-row="6" data-col="3"/>
+					<rect x="50%" y="12.5%" width="12.5%" height="12.5%" id="e7" class="tile-w" data-row="6" data-col="4"/>
+					<rect x="62.5%" y="12.5%" width="12.5%" height="12.5%" id="f7" class="tile-b" data-row="6" data-col="5"/>
+					<rect x="75%" y="12.5%" width="12.5%" height="12.5%" id="g7" class="tile-w" data-row="6" data-col="6"/>
+					<rect x="87.5%" y="12.5%" width="12.5%" height="12.5%" id="h7" class="tile-b" data-row="6" data-col="7"/>
+					<rect x="0%" y="0%" width="12.5%" height="12.5%" id="a8" class="tile-b" data-row="7" data-col="0"/>
+					<rect x="12.5%" y="0%" width="12.5%" height="12.5%" id="b8" class="tile-w" data-row="7" data-col="1"/>
+					<rect x="25%" y="0%" width="12.5%" height="12.5%" id="c8" class="tile-b" data-row="7" data-col="2"/>
+					<rect x="37.5%" y="0%" width="12.5%" height="12.5%" id="d8" class="tile-w" data-row="7" data-col="3"/>
+					<rect x="50%" y="0%" width="12.5%" height="12.5%" id="e8" class="tile-b" data-row="7" data-col="4"/>
+					<rect x="62.5%" y="0%" width="12.5%" height="12.5%" id="f8" class="tile-w" data-row="7" data-col="5"/>
+					<rect x="75%" y="0%" width="12.5%" height="12.5%" id="g8" class="tile-b" data-row="7" data-col="6"/>
+					<rect x="87.5%" y="0%" width="12.5%" height="12.5%" id="h8" class="tile-w" data-row="7" data-col="7"/>
+				</g>
+				<g id="highlights"/>
+				<g id="pieces"/>
+			</svg>
+		</div>
+		<div id="pan-side2" class="pan-side">
+			<div id="colorToPlay" class="token White">to play</div>
+			<div id="thinking" class="token">Let me think about it !</div>
+			<div id="toggleShowLegalMoves" class="token ON">Show legal moves: </div>
+			<div id="toggleSound" class="token OFF">Sound: </div>
+			<div id="rotateBoard" class="token OFF">White on top: </div>
+			<div id="logBoard" class="token action">Log Board</div>
+			<div id="logHistory" class="token action">Log History</div>
+			<div id="logLegalMoves" class="token action">Log Legal Moves</div>
+			<div id="logEval" class="token action">Log Evaluation</div>
+			<div id="logBestMove" class="token action">Log Best Move</div>
+			<div id="redrawBoard" class="token action">Redraw Board</div>
+			<div id="unplayLastMove" class="token action">Unplay Last Move</div>
+			<div id="restartGame" class="token action">Restart Game</div>
+			<div class="token">
+				<u>Todo</u>
+				<ol>
+					<li>Deal with Draw</li>
+					<li>Save/load (LokiJS)</li>
+					<li>Play with someone (Node.js)</li>
+					<li>Dumb mode</li>
+					<li>AI Improvements</li>
+				</ol>
+			</div>
+		</div>
+	</div>
+	<div id="prom" class="popup">
+		<div>
+			<p>Promote to</p>
+			<svg>
+				<rect x="0" y="0" width="50%" height="50%" class="tile-b"/>
+				<rect x="50%" y="0" width="50%" height="50%" class="tile-w"/>
+				<rect x="0" y="50%" width="50%" height="50%" class="tile-w"/>
+				<rect x="50%" y="50%" width="50%" height="50%" class="tile-b"/>
+				<g id="prom_Black">
+					<image x="0" y="0" width="50%" height="50%"/>
+					<image x="50%" y="0" width="50%" height="50%"/>
+					<image x="0" y="50%" width="50%" height="50%"/>
+					<image x="50%" y="50%" width="50%" height="50%"/>
+				</g>
+				<g id="prom_White">
+					<image x="0" y="0" width="50%" height="50%"/>
+					<image x="50%" y="0" width="50%" height="50%"/>
+					<image x="0" y="50%" width="50%" height="50%"/>
+					<image x="50%" y="50%" width="50%" height="50%"/>
+				</g>
+			</svg>
+			<p align="right">or <a href="javascript:cancelPromote();">Cancel</a></p>
+		</div>
+	</div>
+	<div id="win" class="popup">
+		<div>
+			<svg>
+				<text x="10%" y="60%" textLength="80%" class="win">YOU WIN !!!</text>
+			</svg>
+			<p align="right"><a href="javascript:playAgain();">Play again</a></p>
+		</div>
+	</div>
+	<div id="lose" class="popup">
+		<div>
+			<svg>
+				<text x="10%" y="60%" textLength="80%" class="lose">YOU LOSE !!!</text>
+			</svg>
+			<p align="right"><a href="javascript:retry();">Retry</a> or <a href="javascript:unplayAfterLose();">unplay</a></p>
+		</div>
+	</div>
+	<script type="text/javascript" src="js/dumb-const.js"></script>
+	<script type="text/javascript" src="js/dumb-chess.js"></script>
+	<script type="text/javascript" src="js/dumb-client.js"></script>
+	<script type="text/javascript" src="js/dumb-main.js"></script>
+</body>
+</html>
