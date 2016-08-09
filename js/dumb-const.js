@@ -1,5 +1,3 @@
-"use strict";
-
 // Color constants
 const BLACK = 0;
 const WHITE = 1;
@@ -55,3 +53,7 @@ const DRAW     = 0;
 // Game constants
 const HUMAN    = 0;
 const COMPUTER = 1;
+
+// Namesapce constants
+const NS_SVG    = "http://www.w3.org/2000/svg";
+const NS_XLINK  = "http://www.w3.org/1999/xlink"

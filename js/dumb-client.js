@@ -1,9 +1,5 @@
 "use strict";
 
-// Namesapce constants
-const NS_SVG	= "http://www.w3.org/2000/svg";
-const NS_XLINK	= "http://www.w3.org/1999/xlink"
-
 // Sounds
 var audioGood    = new Audio("sound/Applause.mp3");
 var audioBad     = new Audio("sound/Buzzer.mp3");
@@ -279,10 +275,16 @@ function computerPlay() {
 
 // Get piece from coords
 function getPieceAt(piece, row, col) {
-	var pieces = gPieces.getElementsByClassName(PIECE_NAMES[piece]);
+	var pieces = getElemByClass(gPieces, PIECE_NAMES[piece]);
 	for (var i=0; i<pieces.length; i++) {
 		if (pieces.item(i).getAttribute("data-col") == col && pieces.item(i).getAttribute("data-row") == row) return pieces.item(i);
 	}
+}
+
+// Since getElementsByClassName is not working on Edge
+function getElemByClass(svgContainer, className) {
+	if (svgContainer.getElementsByClassName) return svgContainer.getElementsByClassName(className);
+	return document.getElementsByClassName(className);
 }
 
 // Toggle Show Legal moves ON/OFF
@@ -321,7 +323,7 @@ function showLegalMovesForTile(tile) {
 
 // Hide the legal moves highlight circles
 function hideLegalMoves() {
-	var elements = gHighlights.getElementsByClassName("legal");
+	var elements = getElemByClass(gHighlights, "legal");
 	while (elements.length > 0) {
 		gHighlights.removeChild(elements.item(0));
 	}
