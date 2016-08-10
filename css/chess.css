@@ -42,11 +42,11 @@ a:hover {
 }
 
 .tile-w {
-	fill: white;
+	fill: #fffff0;
 }
 
 .tile-b {
-	fill: black;
+	fill: #161600;
 }
 
 .tile-selected {
