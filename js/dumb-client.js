@@ -5,10 +5,13 @@ var audioGood    = new Audio("sound/Applause.mp3");
 var audioBad     = new Audio("sound/Buzzer.mp3");
 var computerBeep = new Audio("sound/tone-beep.wav");
 
+// Short for getElementById
+var $ = document.getElementById.bind(document);
+
 // SVG groups
-var gTiles		= document.getElementById("tiles");
-var gHighlights	= document.getElementById("highlights");
-var gPieces		= document.getElementById("pieces");
+var gTiles		= $("tiles");
+var gHighlights	= $("highlights");
+var gPieces		= $("pieces");
 
 // Selection singleton (tiles for move)
 var selection =  {
@@ -29,7 +32,7 @@ var selection =  {
 };
 
 // Store one tile to get his size on transform translations
-var tileA1 = document.getElementById("a1");
+var tileA1 = $("a1");
 
 // Tile Id from row/col
 function tileId(row, col) {
@@ -41,7 +44,7 @@ function addTilesEventListener() {
 	var tile;
 	for (var row = 0; row < 8; row++) {
 		for (var col = 0; col < 8; col++) {
-			tile = document.getElementById(tileId(row, col));
+			tile = $(tileId(row, col));
 			tile.addEventListener("click", tileClicked);
 		}
 	}
@@ -62,7 +65,7 @@ function drawPiece(piece, row, col) {
 	image.addEventListener("click", pieceClicked);
 	gPieces.appendChild(image);
 	// Remove tile event listener to prevent magnifier on android chrome
-	document.getElementById(tileId(row, col)).removeEventListener("click", tileClicked);
+	$(tileId(row, col)).removeEventListener("click", tileClicked);
 }
 
 // Draw all the pieces
@@ -90,7 +93,7 @@ function pieceClicked(event) {
 
 // Get the tile element a piece element is on
 function getTileFromPiece(piece) {
-	return document.getElementById(tileId(parseInt(piece.getAttribute("data-row")), parseInt(piece.getAttribute("data-col"))));
+	return $(tileId(parseInt(piece.getAttribute("data-row")), parseInt(piece.getAttribute("data-col"))));
 }
 
 // Select a tile
@@ -229,8 +232,8 @@ function playMove(move) {
 	// If it's the computer turn, let it move
 	if (game.players[game.colorToPlay] === COMPUTER) {
 		// Show thinking indicator
-		document.getElementById("thinking").innerHTML = "Let me think about it !";
-		document.getElementById("thinking").style.visibility = "visible";
+		$("thinking").innerHTML = "Let me think about it !";
+		$("thinking").style.visibility = "visible";
 		// Timeout for repaint
 		setTimeout(computerPlay, 100);
 	}
@@ -250,24 +253,24 @@ function computerPlay() {
 		// Computer beep
 		if (game.options.sound) computerBeep.play();
 		// Highlight the move
-		selection.tile1 = document.getElementById(tileId(move.row1, move.col1));
-		selection.tile2 = document.getElementById(tileId(move.row2, move.col2));
+		selection.tile1 = $(tileId(move.row1, move.col1));
+		selection.tile2 = $(tileId(move.row2, move.col2));
 		selection.classBefore1 = selection.tile1.getAttribute("class");
 		selection.classBefore2 = selection.tile2.getAttribute("class");
 		selection.tile1.setAttribute("class", selection.classBefore1 + " tile-selected");
 		selection.tile2.setAttribute("class", selection.classBefore2 + " tile2-selected");
-		document.getElementById("thinking").innerHTML = move.toStr();
+		$("thinking").innerHTML = move.toStr();
 		setTimeout(resetSelection, 800);
 		// Check win
 		if (getLegalMoves(game.colorToPlay).length === 0) {
 			// Lose or draw
-			document.getElementById("thinking").style.visibility = "hidden";
+			$("thinking").style.visibility = "hidden";
 			// Show popup
 			setPopupVisible("lose", true);
 		}
 	} else {
 		// Lose or draw
-		document.getElementById("thinking").style.visibility = "hidden";
+		$("thinking").style.visibility = "hidden";
 		// Show popup
 		setPopupVisible("win", true);
 	}
@@ -290,7 +293,7 @@ function getElemByClass(svgContainer, className) {
 // Toggle Show Legal moves ON/OFF
 function toggleShowLegalMoves() {
 	game.options.showLegalMoves = !game.options.showLegalMoves;
-	document.getElementById("toggleShowLegalMoves").setAttribute("class", "token " + (game.options.showLegalMoves ? "ON" : "OFF"));
+	$("toggleShowLegalMoves").setAttribute("class", "token " + (game.options.showLegalMoves ? "ON" : "OFF"));
 }
 
 // Toggle sound ON/OFF
@@ -300,7 +303,7 @@ function toggleSound() {
 		audioBad.pause();
 	}
 	game.options.sound = !game.options.sound;
-	document.getElementById("toggleSound").setAttribute("class", "token " + (game.options.sound ? "ON" : "OFF"));
+	$("toggleSound").setAttribute("class", "token " + (game.options.sound ? "ON" : "OFF"));
 }
 
 // Highlight legal moves for tile
@@ -331,7 +334,7 @@ function hideLegalMoves() {
 
 // Rotate board to put black at bottom
 function rotateBoard() {
-	var svg = document.getElementById("svg");
+	var svg = $("svg");
 	// Swap white on top flag
 	game.options.whiteOnTop = !game.options.whiteOnTop;
 	if (game.options.whiteOnTop) {
@@ -342,7 +345,7 @@ function rotateBoard() {
 		// Add event listner so the transformation is updated on resize (since it used pixel translation)
 		window.addEventListener("resize", updateTransform);
 		// Toggle button ON
-		document.getElementById("rotateBoard").setAttribute("class", "token ON");
+		$("rotateBoard").setAttribute("class", "token ON");
 	} else {
 		// Remove event listner ...
 		window.removeEventListener("resize", updateTransform);
@@ -354,7 +357,7 @@ function rotateBoard() {
 			pieces.item(i).removeAttribute("transform");
 		}
 		// Toggle button OFF
-		document.getElementById("rotateBoard").setAttribute("class", "token OFF");
+		$("rotateBoard").setAttribute("class", "token OFF");
 	}
 }
 
@@ -410,14 +413,14 @@ function restartGame() {
 
 // Update color to play <div>
 function updateColorToPlay() {
-	document.getElementById("colorToPlay").setAttribute("class", "token " + COLOR_NAMES[game.colorToPlay]);
+	$("colorToPlay").setAttribute("class", "token " + COLOR_NAMES[game.colorToPlay]);
 }
 
 // Show promotion popup
 function promotionPopup(color) {
 	// Hide pieces for wrong color
-	document.getElementById("prom_" + COLOR_NAMES[1 - color]).style.visibility = "hidden";
-	document.getElementById("prom_" + COLOR_NAMES[  color  ]).style.visibility = "visible";
+	$("prom_" + COLOR_NAMES[1 - color]).style.visibility = "hidden";
+	$("prom_" + COLOR_NAMES[  color  ]).style.visibility = "visible";
 	// Show popup
 	setPopupVisible("prom", true);
 }
@@ -425,7 +428,7 @@ function promotionPopup(color) {
 // Show promotion popup
 function initPromotionPopup(color) {
 	// Get the group for color
-	var group = document.getElementById("prom_" + COLOR_NAMES[color]);
+	var group = $("prom_" + COLOR_NAMES[color]);
 	// Create the 4 images
 	var images = group.getElementsByTagName("image");
 	for (var i = 0, piece = QUEEN; i < 4; i ++, piece ++) {
@@ -437,8 +440,8 @@ function initPromotionPopup(color) {
 
 // Show or hide popup by id
 function setPopupVisible(id, visible) {
-	document.getElementById(id).style.display       = (visible ? "initial" : "none");
-	document.getElementById(id).style.pointerEvents = (visible ? "auto"    : "none");
+	$(id).style.display       = (visible ? "initial" : "none");
+	$(id).style.pointerEvents = (visible ? "auto"    : "none");
 }
 
 // Close promotion
