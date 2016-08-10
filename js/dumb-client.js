@@ -445,11 +445,13 @@ function setPopupVisible(id, visible) {
 }
 
 // Close promotion
-function cancelPromote() {
+function cancelPromote(evt) {
 	// Reset selection
 	resetSelection();
 	// Hide popup
 	setPopupVisible("prom", false);
+	// Prevent link to #
+	evt.preventDefault();
 }
 
 // Apply promotion
@@ -463,19 +465,16 @@ function promotionPieceClicked(event) {
 }
 
 // play again (after win)
-function playAgain() {
+function playAgain(evt) {
 	setPopupVisible("win", false);
-	restartGame();
-}
-
-// play again (after lose)
-function retry() {
 	setPopupVisible("lose", false);
 	restartGame();
+	evt.preventDefault();
 }
 
 // unplay (after lose) 
-function unplayAfterLose() {
+function unplayAfterLose(evt) {
 	setPopupVisible("lose", false);
 	unplayLastMove();
+	evt.preventDefault();
 }

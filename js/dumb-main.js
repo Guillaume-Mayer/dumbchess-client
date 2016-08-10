@@ -36,3 +36,9 @@ $("restartGame"         ).addEventListener("click", restartGame);
 // Init promotion popup
 initPromotionPopup(BLACK);
 initPromotionPopup(WHITE);
+
+// link like actions
+$("cancelPromote").addEventListener("click", cancelPromote);
+$("playAgain").addEventListener("click", playAgain);
+$("retry").addEventListener("click", playAgain);
+$("unplayAfterLose").addEventListener("click", unplayAfterLose);
