@@ -455,8 +455,8 @@ function cancelPromote(evt) {
 }
 
 // Apply promotion
-function promotionPieceClicked(event) {
-	selection.promote = parseInt(this.getAttribute("data-piece"));
+function promotionPieceClicked(evt) {
+	selection.promote = parseInt(evt.target.getAttribute("data-piece"));
 	// Hide popup
 	setPopupVisible("prom", false);
 	// Check if the move is legal
