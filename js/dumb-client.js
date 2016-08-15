@@ -1,3 +1,7 @@
+// Namesapce constants
+const NS_SVG    = "http://www.w3.org/2000/svg";
+const NS_XLINK  = "http://www.w3.org/1999/xlink"
+
 "use strict";
 
 // Sounds
@@ -242,7 +246,10 @@ function playMove(move) {
 // When computer thinks
 function computerPlay() {
 	// Get the best move
-	var move = getBestMove();
+	var move;
+	move = getBestMove();
+	//move = iterativeDeepening();
+	//workerNegaMax();
 	if (move) {
 		// Play it
 		play(move);
@@ -259,7 +266,7 @@ function computerPlay() {
 		selection.classBefore2 = selection.tile2.getAttribute("class");
 		selection.tile1.setAttribute("class", selection.classBefore1 + " tile-selected");
 		selection.tile2.setAttribute("class", selection.classBefore2 + " tile2-selected");
-		$("thinking").innerHTML = move.toStr();
+		$("thinking").innerHTML = moveToStr(move);
 		setTimeout(resetSelection, 800);
 		// Check win
 		if (getLegalMoves(game.colorToPlay).length === 0) {
@@ -477,4 +484,19 @@ function unplayAfterLose(evt) {
 	setPopupVisible("lose", false);
 	unplayLastMove();
 	evt.preventDefault();
+}
+
+// Restart the game by unplaying all history moves
+function restart() {
+   while(game.history.length > 0) {
+        unplay(game.history[game.history.length - 1]);
+    }
+}
+
+// Called by dumb-client
+function getLegalMove(row1, col1, row2, col2, promote) {
+    var legal = removeIllegalMoves(getMovesForTile(game.colorToPlay, row1, col1), game.colorToPlay);
+    for (var m = 0; m < legal.length; m ++) {
+        if (legal[m].row2 === row2 && legal[m].col2 === col2 && legal[m].promote == promote) return legal[m];
+    }
 }

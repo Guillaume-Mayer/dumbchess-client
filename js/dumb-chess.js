@@ -38,14 +38,17 @@ var game = {
         sound : true,
         showLegalMoves : true,
         whiteOnTop : false,
-        negaMaxDepth: 3,
+        negaMaxDepth: 5,
         coefT : 2,
         coefM : 3
     }
 };
 
 // Capturable piece
-var _capture;
+var __capture;
+
+// Moves working array
+var __moves;
 
 // Move object
 /** @constructor */
@@ -57,15 +60,15 @@ function Move(piece, row2, col2, row1, col1) {
     this.col2 = col2;
 }
 
-// Move to string (not used yet)
-Move.prototype.toStr = function() {
-    if (this.castling === KING) return "O-O";
-    if (this.castling === QUEEN) return "O-O-O";
-    return PIECE_ALG[this.piece] +
-        LETTERS.charAt(this.col1) + String(this.row1 + 1) +
-        (this.capture ? "x" : "-") +
-        LETTERS.charAt(this.col2) + String(this.row2 + 1) +
-        (this.enPassant ? "ep" : (this.promote ? PIECE_ALG[this.promote] : ""));
+// Move to string
+function moveToStr(move) {
+    if (move.castling === KING) return "O-O";
+    if (move.castling === QUEEN) return "O-O-O";
+    return PIECE_ALG[move.piece] +
+        LETTERS.charAt(move.col1) + String(move.row1 + 1) +
+        (move.capture ? "x" : "-") +
+        LETTERS.charAt(move.col2) + String(move.row2 + 1) +
+        (move.enPassant ? "ep" : (move.promote ? PIECE_ALG[move.promote] : ""));
 };
 
 // Assign captured piece and returns instance for chaining purpose
@@ -99,9 +102,9 @@ function getLegalMoves(color) {
 
 // Get pseudo-legal moves (without considering check situation)
 function getPseudoLegalMoves(color) {
-    var moves = [];
-    for (var row = 0; row < 8; row++) {
-        for (var col = 0; col < 8; col++) {
+    var moves = [], row, col;
+    for (row = 8; row --;) {
+        for (col = 8; col--;) {
             moves = moves.concat(getMovesForTile(color, row, col));
         }
     }
@@ -165,7 +168,7 @@ function getMovesForPawn(color, row, col) {
     // Capture on left
     if (col > 0) {
         if (isCapturableTile(row + sens, col - 1, color)) {
-            moves.push(new Move(PAWN, row + sens, col - 1, row, col).Capture(_capture));
+            moves.push(new Move(PAWN, row + sens, col - 1, row, col).Capture(__capture));
         } else if (ep_row && game.twoPushCol[1 - color] === col - 1) {
             moves.push(new Move(PAWN, row + sens, col - 1, row, col).Capture(PAWN).EnPassant());
         }
@@ -173,7 +176,7 @@ function getMovesForPawn(color, row, col) {
     // Capture on right
     if (col < 7) {
         if (isCapturableTile(row + sens, col + 1, color)) {
-            moves.push(new Move(PAWN, row + sens, col + 1, row, col).Capture(_capture));
+            moves.push(new Move(PAWN, row + sens, col + 1, row, col).Capture(__capture));
         } else if (ep_row && game.twoPushCol[1 - color] === col + 1) {
             moves.push(new Move(PAWN, row + sens, col + 1, row, col).Capture(PAWN).EnPassant());
         }
@@ -199,7 +202,7 @@ function getMovesForRook(color, row, col, piece) {
         if (!game.board[row][c]) {
             moves.push(new Move(piece, row, c, row, col));
         } else if (isCapturableTile(row, c, color)) {
-            moves.push(new Move(piece, row, c, row, col).Capture(_capture));
+            moves.push(new Move(piece, row, c, row, col).Capture(__capture));
             break;
         } else {
             break;
@@ -210,7 +213,7 @@ function getMovesForRook(color, row, col, piece) {
         if (!game.board[row][c]) {
             moves.push(new Move(piece, row, c, row, col));
         } else if (isCapturableTile(row, c, color)) {
-            moves.push(new Move(piece, row, c, row, col).Capture(_capture));
+            moves.push(new Move(piece, row, c, row, col).Capture(__capture));
             break;
         } else {
             break;
@@ -221,7 +224,7 @@ function getMovesForRook(color, row, col, piece) {
         if (!game.board[r][col]) {
             moves.push(new Move(piece, r, col, row, col));
         } else if (isCapturableTile(r, col, color)) {
-            moves.push(new Move(piece, r, col, row, col).Capture(_capture));
+            moves.push(new Move(piece, r, col, row, col).Capture(__capture));
             break;
         } else {
             break;
@@ -232,7 +235,7 @@ function getMovesForRook(color, row, col, piece) {
         if (!game.board[r][col]) {
             moves.push(new Move(piece, r, col, row, col));
         } else if (isCapturableTile(r, col, color)) {
-            moves.push(new Move(piece, r, col, row, col).Capture(_capture));
+            moves.push(new Move(piece, r, col, row, col).Capture(__capture));
             break;
         } else {
             break;
@@ -251,7 +254,7 @@ function getMovesForBishop(color, row, col, piece) {
         if (!game.board[r][c]) {
             moves.push(new Move(piece, r, c, row, col));
         } else if (isCapturableTile(r, c, color)) {
-            moves.push(new Move(piece, r, c, row, col).Capture(_capture));
+            moves.push(new Move(piece, r, c, row, col).Capture(__capture));
             break;
         } else {
             break;
@@ -266,7 +269,7 @@ function getMovesForBishop(color, row, col, piece) {
         if (!game.board[r][c]) {
             moves.push(new Move(piece, r, c, row, col));
         } else if (isCapturableTile(r, c, color)) {
-            moves.push(new Move(piece, r, c, row, col).Capture(_capture));
+            moves.push(new Move(piece, r, c, row, col).Capture(__capture));
             break;
         } else {
             break;
@@ -281,7 +284,7 @@ function getMovesForBishop(color, row, col, piece) {
         if (!game.board[r][c]) {
             moves.push(new Move(piece, r, c, row, col));
         } else if (isCapturableTile(r, c, color)) {
-            moves.push(new Move(piece, r, c, row, col).Capture(_capture));
+            moves.push(new Move(piece, r, c, row, col).Capture(__capture));
             break;
         } else {
             break;
@@ -296,7 +299,7 @@ function getMovesForBishop(color, row, col, piece) {
         if (!game.board[r][c]) {
             moves.push(new Move(piece, r, c, row, col));
         } else if (isCapturableTile(r, c, color)) {
-            moves.push(new Move(piece, r, c, row, col).Capture(_capture));
+            moves.push(new Move(piece, r, c, row, col).Capture(__capture));
             break;
         } else {
             break;
@@ -313,7 +316,7 @@ function getMovesForKnight(color, row, col) {
         if (isEmptyTile(row + KNIGHT_MOVES[m][0], col + KNIGHT_MOVES[m][1])) {
             moves.push(new Move(KNIGHT, row + KNIGHT_MOVES[m][0], col + KNIGHT_MOVES[m][1], row, col));
         } else if (isCapturableTile(row + KNIGHT_MOVES[m][0], col + KNIGHT_MOVES[m][1], color)) {
-            moves.push(new Move(KNIGHT, row + KNIGHT_MOVES[m][0], col + KNIGHT_MOVES[m][1], row, col).Capture(_capture));
+            moves.push(new Move(KNIGHT, row + KNIGHT_MOVES[m][0], col + KNIGHT_MOVES[m][1], row, col).Capture(__capture));
         }
     }
     return moves;
@@ -325,7 +328,7 @@ function getMovesForKing(color, row, col) {
         if (isEmptyTile(row + KING_MOVES[m][0], col + KING_MOVES[m][1])) {
             moves.push(new Move(KING, row + KING_MOVES[m][0], col + KING_MOVES[m][1], row, col));
         } else if (isCapturableTile(row + KING_MOVES[m][0], col + KING_MOVES[m][1], color)) {
-            moves.push(new Move(KING, row + KING_MOVES[m][0], col + KING_MOVES[m][1], row, col).Capture(_capture));
+            moves.push(new Move(KING, row + KING_MOVES[m][0], col + KING_MOVES[m][1], row, col).Capture(__capture));
         }
     }
     // Castling
@@ -372,7 +375,7 @@ function isCapturableTile(row, col, color) {
     if (!game.board[row][col]) return false;
     if (game.board[row][col].color === color) return false;
     if (game.board[row][col].piece === KING) return false;
-    _capture = game.board[row][col].piece;
+    __capture = game.board[row][col].piece;
     return true;
 }
 
@@ -386,13 +389,13 @@ function isAttackedTile(row, col, color) {
         if (!game.board[r][c]) {
             // Nothing happens
         } else if (isAttackableTile(r, c, color)) {
-            if (_capture === BISHOP) {
+            if (__capture === BISHOP) {
                 return true;
-            } else if (_capture === PAWN) {
+            } else if (__capture === PAWN) {
                 if (r === row + 1 && color === WHITE) return true;
-            } else if (_capture === KING) {
+            } else if (__capture === KING) {
                 if (r === row + 1) return true;
-            } else if (_capture === QUEEN) {
+            } else if (__capture === QUEEN) {
                 return true;
             }
             break;
@@ -408,13 +411,13 @@ function isAttackedTile(row, col, color) {
         if (!game.board[r][c]) {
             // Nothing happens
         } else if (isAttackableTile(r, c, color)) {
-            if (_capture === BISHOP) {
+            if (__capture === BISHOP) {
                 return true;
-            } else if (_capture === PAWN) {
+            } else if (__capture === PAWN) {
                 if (r === row + 1 && color === WHITE) return true;
-            } else if (_capture === KING) {
+            } else if (__capture === KING) {
                 if (r === row + 1) return true;
-            } else if (_capture === QUEEN) {
+            } else if (__capture === QUEEN) {
                 return true;
             }
             break;
@@ -430,13 +433,13 @@ function isAttackedTile(row, col, color) {
         if (!game.board[r][c]) {
             // Nothing happens
         } else if (isAttackableTile(r, c, color)) {
-            if (_capture === BISHOP) {
+            if (__capture === BISHOP) {
                 return true;
-            } else if (_capture === PAWN) {
+            } else if (__capture === PAWN) {
                 if (r === row - 1 && color === BLACK) return true;
-            } else if (_capture === KING) {
+            } else if (__capture === KING) {
                 if (r === row - 1) return true;
-            } else if (_capture === QUEEN) {
+            } else if (__capture === QUEEN) {
                 return true;
             }
             break;
@@ -452,13 +455,13 @@ function isAttackedTile(row, col, color) {
         if (!game.board[r][c]) {
             // Nothing happens
         } else if (isAttackableTile(r, c, color)) {
-            if (_capture === BISHOP) {
+            if (__capture === BISHOP) {
                 return true;
-            } else if (_capture === PAWN) {
+            } else if (__capture === PAWN) {
                 if (r === row - 1 && color === BLACK) return true;
-            } else if (_capture === KING) {
+            } else if (__capture === KING) {
                 if (r === row - 1) return true;
-            } else if (_capture === QUEEN) {
+            } else if (__capture === QUEEN) {
                 return true;
             }
             break;
@@ -473,11 +476,11 @@ function isAttackedTile(row, col, color) {
         if (!game.board[row][c]) {
             // Nothing happens
         } else if (isAttackableTile(row, c, color)) {
-            if (_capture === ROOK) {
+            if (__capture === ROOK) {
                 return true;
-            } else if (_capture === KING) {
+            } else if (__capture === KING) {
                 if (c === col - 1) return true;
-            } else if (_capture === QUEEN) {
+            } else if (__capture === QUEEN) {
                 return true;
             }
             break;
@@ -490,11 +493,11 @@ function isAttackedTile(row, col, color) {
         if (!game.board[row][c]) {
             // Nothing happens
         } else if (isAttackableTile(row, c, color)) {
-            if (_capture === ROOK) {
+            if (__capture === ROOK) {
                 return true;
-            } else if (_capture === KING) {
+            } else if (__capture === KING) {
                 if (c === col + 1) return true;
-            } else if (_capture === QUEEN) {
+            } else if (__capture === QUEEN) {
                 return true;
             }
             break;
@@ -507,11 +510,11 @@ function isAttackedTile(row, col, color) {
         if (!game.board[r][col]) {
             // Nothing happens
         } else if (isAttackableTile(r, col, color)) {
-            if (_capture === ROOK) {
+            if (__capture === ROOK) {
                 return true;
-            } else if (_capture === KING) {
+            } else if (__capture === KING) {
                 if (r === row + 1) return true;
-            } else if (_capture === QUEEN) {
+            } else if (__capture === QUEEN) {
                 return true;
             }
             break;
@@ -524,11 +527,11 @@ function isAttackedTile(row, col, color) {
         if (!game.board[r][col]) {
             // Nothing happens
         } else if (isAttackableTile(r, col, color)) {
-            if (_capture === ROOK) {
+            if (__capture === ROOK) {
                 return true;
-            } else if (_capture === KING) {
+            } else if (__capture === KING) {
                 if (r === row - 1) return true;
-            } else if (_capture === QUEEN) {
+            } else if (__capture === QUEEN) {
                 return true;
             }
             break;
@@ -539,7 +542,7 @@ function isAttackedTile(row, col, color) {
     // Check knight attack
     for (var m = 0; m < KNIGHT_MOVES.length; m++) {
         if (isCapturableTile(row + KNIGHT_MOVES[m][0], col + KNIGHT_MOVES[m][1], color)) {
-            if (_capture === KNIGHT) return true;
+            if (__capture === KNIGHT) return true;
         }
     }
     return false;
@@ -548,21 +551,13 @@ function isAttackedTile(row, col, color) {
 // Check if a tile is attacked
 function isAttackableTile(row, col, color) {
     if (game.board[row][col].color === color) return false;
-    _capture = game.board[row][col].piece;
+    __capture = game.board[row][col].piece;
     return true;
 }
 
 // Check if th king is attacked
 function isCheck(color) {
     return isAttackedTile(game.kingRow[color], game.kingCol[color], color);
-}
-
-// Called by dumb-client
-function getLegalMove(row1, col1, row2, col2, promote) {
-    var legal = removeIllegalMoves(getMovesForTile(game.colorToPlay, row1, col1), game.colorToPlay);
-    for (var m = 0; m < legal.length; m ++) {
-        if (legal[m].row2 === row2 && legal[m].col2 === col2 && legal[m].promote == promote) return legal[m];
-    }
 }
 
 // Play a move
@@ -659,138 +654,4 @@ function unplay(move) {
     game.colorToPlay = (1 - game.colorToPlay);
     // Remove move from history
     game.history.pop();
-}
-
-// Restart the game by unplaying all history moves
-function restart() {
-   while(game.history.length > 0) {
-        unplay(game.history[game.history.length - 1]);
-    }
-}
-
-// Log board for debugging
-function logBoard() {
-    console.log("Board (" + COLOR_NAMES[game.colorToPlay] + " to play)");
-    var s = "";
-    for (var row = 7; row >= 0; row--) {
-        for (var col = 0; col < 8; col ++) {
-            var p = game.board[row][col];
-            if (p === 0) {
-                s += "-";
-            } else if (game.board[row][col].piece === PAWN) {
-                s += game.board[row][col].color === WHITE ? "P" : "p";
-            } else if (game.board[row][col].color === BLACK) {
-                s += PIECE_ALG[game.board[row][col].piece].toLowerCase();
-            } else {
-                s += PIECE_ALG[game.board[row][col].piece];
-            }
-        }
-        s += "\n";
-    }
-    console.log(s);
-}
-
-// Log moves history
-function logHistory() {
-    console.log("Moves history (" + game.history.length + ")");
-    for (var i = 0, turn = 1; i < game.history.length; i += 2, turn ++) {
-        console.log(turn + ": " + game.history[i].toStr() + (i + 1 < game.history.length ? "\t" + game.history[i+1].toStr() : ""));
-    }
-}
-
-// Log moves history
-function logLegalMoves() {
-    var moves = getLegalMoves(game.colorToPlay);
-    console.log("Legal moves for " + COLOR_NAMES[game.colorToPlay] + " (" + moves.length + ")");
-    moves.forEach(function(move) {
-        console.log(move.toStr());
-    });
-}
-
-// Log evaluation
-function logEval() {
-    console.log("Evaluation for " + COLOR_NAMES[game.colorToPlay] + ": " + evaluate());
-}
-
-// Evaluate the color position
-function evaluate() {
-    // Evaluate from color to play point of view
-    var color = game.colorToPlay;
-    // Get mobility score (count legal moves)
-    var mobility = getLegalMoves(color).length;
-    // Mate situations
-    if (mobility === 0) {
-        if (isCheck(color)) return -MATE
-        return DRAW;
-    }
-    // Substract adversary mobility
-    mobility -= getLegalMoves(1 - color).length;
-    //  Get material score
-    var material = evalMaterial(color);
-    // Ponderate using const coefs
-    return (game.options.coefT * mobility) + (game.options.coefM * material);
-}
-
-// Material evalutation
-function evalMaterial(color) {
-    var score = 0;
-    for (var row = 0; row < 8; row ++) {
-        for (var col = 0; col < 8; col ++) {
-            var piece = game.board[row][col];
-            if (piece) score += MATERIAL[piece.piece] * (piece.color === color ? 1 : -1);
-        }
-    }
-    return score;
-}
-
-function negaMax(depth, alpha, beta) {
-    /*  See Negamax with alpha beta pruning
-        on https://en.wikipedia.org/wiki/Negamax
-    */
-    // Stop conditions
-    if (depth === 0) return { score: evaluate(), moves: [] };
-    var moves = getLegalMoves(game.colorToPlay);
-    if (moves.length === 0) return { score: evaluate(), moves: [] }; // WARN this could be improved (score is MATE or DRAW, no need to evaluate)
-    // Set the worst for best score
-    var bestScore = -INFINITY,
-        bestMoves = [];
-    // Loop moves
-    for (var m = 0; m < moves.length; m++) {
-        // Play the move
-        play(moves[m]);
-        // Negative recursive evaluation
-        var negaMaxObj = negaMax(depth - 1, -beta, -alpha);
-        var score = -negaMaxObj.score;
-        // Unplay the move
-        unplay(moves[m]);
-        // Keep best move and score
-        if (score > bestScore) {
-            bestScore = score;
-            bestMoves = negaMaxObj.moves.slice();
-            bestMoves.unshift(moves[m]);
-        }
-        // Alpha-beta pruning
-        alpha = Math.max(alpha, score);
-        if (alpha >= beta) break;
-    }
-    return { score: bestScore, moves: bestMoves };
-}
-
-// Get and log the best move for the current position
-function logBestMove() {
-    var start = new Date();
-    var negaMaxObj = negaMax(game.options.negaMaxDepth, -INFINITY, +INFINITY);
-    var end = new Date();
-    var strMoves = [];
-    negaMaxObj.moves.forEach(function(move) {
-        strMoves.push(move.toStr());
-    });
-    console.log("NegaMax(" + game.options.negaMaxDepth + "): " + negaMaxObj.score + " [" + strMoves.join(", ") + "]");
-    console.log("I thought for " + (end - start) + "ms");
-}
-
-// Get the best move for the current position
-function getBestMove() {
-    var negaMaxObj = negaMax(game.options.negaMaxDepth, -INFINITY, +INFINITY);
-    if (negaMaxObj.moves.length) return negaMaxObj.moves[0];
 }

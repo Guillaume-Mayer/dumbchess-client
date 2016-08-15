@@ -18,7 +18,7 @@ const PIECE_NAMES = ["King", "Queen", "Rook", "Bishop", "Knight", "Pawn"];
 const PIECE_ALG   = ["K", "Q", "R", "B", "N", ""];
 
 // Material values
-const MATERIAL    = [0, 100, 50, 30, 30, 10];
+const MATERIAL    = [0, 90, 50, 30, 30, 10];
 
 // Letters to name columns
 const LETTERS   = "abcdefgh";
@@ -46,14 +46,10 @@ const KNIGHT_MOVES = [
 ];
 
 // Evaluation constants
-const MATE     = 999999999;
-const INFINITY = (MATE + 1);
-const DRAW     = 0;
+const MATE      = -Infinity;
+const DRAW      = 0;
 
 // Game constants
 const HUMAN    = 0;
 const COMPUTER = 1;
 
-// Namesapce constants
-const NS_SVG    = "http://www.w3.org/2000/svg";
-const NS_XLINK  = "http://www.w3.org/1999/xlink"
