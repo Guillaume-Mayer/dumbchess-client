@@ -1,4 +1,4 @@
-self.importScripts("dumb-const.js", "dumb-chess.js", "dumb-think.js");
+self.importScripts("dumb-chess.js");
 
 var index;
 
@@ -13,7 +13,7 @@ self.addEventListener("message", function(e) {
 	} else if (obj.row1) {
 		// If the message is a move: play it and get the score
 		play(obj);
-		var negaMaxObj = negaMax(game.options.negaMaxDepth - 1, -Infinity, +Infinity);
+		var negaMaxObj = negaMax(chess.options.negaMaxDepth - 1, -Infinity, +Infinity);
 		self.postMessage(JSON.stringify({index: self.index, negamax: negaMaxObj}));
 		self.close();
 	}

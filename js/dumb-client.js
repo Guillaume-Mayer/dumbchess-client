@@ -2,6 +2,10 @@
 const NS_SVG    = "http://www.w3.org/2000/svg";
 const NS_XLINK  = "http://www.w3.org/1999/xlink"
 
+// Names
+const COLOR_NAMES = ["Black", "White"];
+const PIECE_NAMES = ["King", "Queen", "Rook", "Bishop", "Knight", "Pawn"];
+
 "use strict";
 
 // Sounds
@@ -32,23 +36,18 @@ var selection =  {
 	// Tile class before selection
 	classBefore2: "",
 	// Promote to
-	promote: null
+	promote: 0
 };
 
 // Store one tile to get his size on transform translations
 var tileA1 = $("a1");
-
-// Tile Id from row/col
-function tileId(row, col) {
-	return LETTERS.charAt(col) + String(row + 1);
-}
 
 // Add a listener for each tile
 function addTilesEventListener() {
 	var tile;
 	for (var row = 0; row < 8; row++) {
 		for (var col = 0; col < 8; col++) {
-			tile = $(tileId(row, col));
+			tile = $(chess.tileId(row, col));
 			tile.addEventListener("click", tileClicked);
 		}
 	}
@@ -69,20 +68,20 @@ function drawPiece(piece, row, col) {
 	image.addEventListener("click", pieceClicked);
 	gPieces.appendChild(image);
 	// Remove tile event listener to prevent magnifier on android chrome
-	$(tileId(row, col)).removeEventListener("click", tileClicked);
+	$(chess.tileId(row, col)).removeEventListener("click", tileClicked);
 }
 
 // Draw all the pieces
 function drawPieces() {
 	for (var row = 0; row < 8; row ++) {
 		for (var col = 0; col < 8; col ++) {
-			if (game.board[row][col]) {
-				drawPiece(game.board[row][col], row, col);
+			if (chess.board[row][col]) {
+				drawPiece(chess.board[row][col], row, col);
 			}
 		}
 	}
 	// Apply rotation if needed
-	if (game.options.whiteOnTop) updateTransform();
+	if (chess.options.whiteOnTop) updateTransform();
 }
 
 // Occurs when a tile is clicked
@@ -97,16 +96,16 @@ function pieceClicked(event) {
 
 // Get the tile element a piece element is on
 function getTileFromPiece(piece) {
-	return $(tileId(parseInt(piece.getAttribute("data-row")), parseInt(piece.getAttribute("data-col"))));
+	return $(chess.tileId(parseInt(piece.getAttribute("data-row")), parseInt(piece.getAttribute("data-col"))));
 }
 
 // Select a tile
 function selectTile(tile, piece) {
-	if (game.players[game.colorToPlay] === COMPUTER) return;
+	if (chess.options.players[chess.colorToPlay()] === chess.COMPUTER) return;
 	if (tile == selection.tile1) {
 		// Reset selection on reclick
 		resetSelection();
-	} else if (piece != undefined && parseInt(piece.getAttribute("data-color")) == game.colorToPlay) {
+	} else if (piece != undefined && parseInt(piece.getAttribute("data-color")) == chess.colorToPlay()) {
 		// Ok, there is a piece to move here
 		resetSelection();
 		// Store the tile and his piece
@@ -116,7 +115,7 @@ function selectTile(tile, piece) {
 		//  Add the tile-selected class style
 		tile.setAttribute("class", selection.classBefore1 + " tile-selected");
 		// Highlight the legal moves
-		if (game.options.showLegalMoves) showLegalMovesForTile(tile);
+		if (chess.options.showLegalMoves) showLegalMovesForTile(tile);
 	} else if (selection.tile1 != null) {
 		// Ok the first tile was selected and the second tile is not of the same color
 		selection.tile2 = tile;
@@ -125,12 +124,12 @@ function selectTile(tile, piece) {
 		//  Add the tile-selected class style
 		tile.setAttribute("class", selection.classBefore2 + " tile2-selected");
 		// Promotion
-		if (selection.piece1.getAttribute("class") == "piece " + PIECE_NAMES[PAWN]) {
+		if (selection.piece1.getAttribute("class") == "piece " + PIECE_NAMES[chess.PAWN]) {
 			if (tile.getAttribute("data-row") == "0") {
-				promotionPopup(BLACK);
+				promotionPopup(chess.BLACK);
 				return;
 			} else if (tile.getAttribute("data-row") == "7") {
-				promotionPopup(WHITE);
+				promotionPopup(chess.WHITE);
 				return;
 			}
 		}
@@ -157,7 +156,7 @@ function resetSelection() {
 			selection.tile2 = null;
 			selection.piece2 = null;
 			selection.classBefore2 = "";
-			selection.promote = null;
+			selection.promote = 0;
 		}
 	}
 }
@@ -171,7 +170,7 @@ function checkMove() {
 		parseInt(selection.tile2.getAttribute("data-col")),
 		selection.promote
 		);
-	if (game.options.sound) {
+	if (chess.options.sound) {
 		if (move) {
 			audioGood.play();
 		} else {
@@ -193,7 +192,7 @@ function playMove(move) {
 	selection.piece1.setAttribute("data-col", move.col2);
 	// If white are on top transformation needs to be updated
 	var w, h;
-	if (game.options.whiteOnTop) {
+	if (chess.options.whiteOnTop) {
 		w = selection.piece1.width.baseVal.value;
 		h = selection.piece1.height.baseVal.value;
 		selection.piece1.setAttribute("transform", "translate(" + (((move.col2*2)+1) * w) + " " + ((((7 - move.row2)*2)+1) * h) + ") rotate(180)");
@@ -201,31 +200,31 @@ function playMove(move) {
 	// Special move stuff
 	if (move.enPassant) {
 		// Find and remove the pawn image
-		var pawn = getPieceAt(PAWN, game.colorToPlay == WHITE ? 4 : 3, move.col2);
+		var pawn = getPieceAt(PAWN, chess.colorToPlay() == chess.WHITE ? 4 : 3, move.col2);
 		getTileFromPiece(pawn).addEventListener("click", tileClicked);
 		gPieces.removeChild(pawn);
-	} else if (move.castling == KING) {
+	} else if (move.castling == chess.KING) {
 		// Move king-side rook
-		var rook = getPieceAt(ROOK, move.row1, 7);
+		var rook = getPieceAt(chess.ROOK, move.row1, 7);
 		getTileFromPiece(rook).addEventListener("click", tileClicked);
 		rook.setAttribute("x", 12.5*5 + "%");
 		rook.setAttribute("data-col", 5);
 		getTileFromPiece(rook).removeEventListener("click", tileClicked);
-		if (game.options.whiteOnTop) rook.setAttribute("transform", "translate(" + (((5*2)+1) * w) + " " + ((((7 - move.row1)*2)+1) * h) + ") rotate(180)");
-	} else if (move.castling == QUEEN) {
+		if (chess.options.whiteOnTop) rook.setAttribute("transform", "translate(" + (((5*2)+1) * w) + " " + ((((7 - move.row1)*2)+1) * h) + ") rotate(180)");
+	} else if (move.castling == chess.QUEEN) {
 		// Move queen-side rook
-		var rook = getPieceAt(ROOK, move.row1, 0);
+		var rook = getPieceAt(chess.ROOK, move.row1, 0);
 		getTileFromPiece(rook).addEventListener("click", tileClicked);
 		rook.setAttribute("x", 12.5*3 + "%");
 		rook.setAttribute("data-col", 3);
 		getTileFromPiece(rook).removeEventListener("click", tileClicked);
-		if (game.options.whiteOnTop) rook.setAttribute("transform", "translate(" + (((3*2)+1) * w) + " " + ((((7 - move.row1)*2)+1) * h) + ") rotate(180)");
+		if (chess.options.whiteOnTop) rook.setAttribute("transform", "translate(" + (((3*2)+1) * w) + " " + ((((7 - move.row1)*2)+1) * h) + ") rotate(180)");
 	} else if (move.promote) {
-		selection.piece1.setAttributeNS(NS_XLINK, "xlink:href", "img/" + PIECE_NAMES[move.promote] + "_" + COLOR_NAMES[game.colorToPlay] + ".svg");
+		selection.piece1.setAttributeNS(NS_XLINK, "xlink:href", "img/" + PIECE_NAMES[move.promote] + "_" + COLOR_NAMES[chess.colorToPlay()] + ".svg");
 		selection.piece1.setAttribute("class", "piece " + PIECE_NAMES[move.promote]);
 	}
 	// Apply move to model
-	play(move);
+	chess.play(move);
 	// Swap color to play <div>
 	updateColorToPlay()
 	// Deals with event listner for chrome android
@@ -234,7 +233,7 @@ function playMove(move) {
 	// Reset selection
 	resetSelection();
 	// If it's the computer turn, let it move
-	if (game.players[game.colorToPlay] === COMPUTER) {
+	if (chess.options.players[chess.colorToPlay()] === chess.COMPUTER) {
 		// Show thinking indicator
 		$("thinking").innerHTML = "Let me think about it !";
 		$("thinking").style.visibility = "visible";
@@ -247,29 +246,28 @@ function playMove(move) {
 function computerPlay() {
 	// Get the best move
 	var move;
-	move = getBestMove();
+	move = chess.getBestMove();
 	//move = iterativeDeepening();
-	//workerNegaMax();
 	if (move) {
 		// Play it
-		play(move);
+		chess.play(move);
 		// Redraw the board
 		redrawBoard();
 		// Update color to play <div>
 		updateColorToPlay();
 		// Computer beep
-		if (game.options.sound) computerBeep.play();
+		if (chess.options.sound) computerBeep.play();
 		// Highlight the move
-		selection.tile1 = $(tileId(move.row1, move.col1));
-		selection.tile2 = $(tileId(move.row2, move.col2));
+		selection.tile1 = $(chess.tileId(move.row1, move.col1));
+		selection.tile2 = $(chess.tileId(move.row2, move.col2));
 		selection.classBefore1 = selection.tile1.getAttribute("class");
 		selection.classBefore2 = selection.tile2.getAttribute("class");
 		selection.tile1.setAttribute("class", selection.classBefore1 + " tile-selected");
 		selection.tile2.setAttribute("class", selection.classBefore2 + " tile2-selected");
-		$("thinking").innerHTML = moveToStr(move);
+		$("thinking").innerHTML = chess.moveToStr(move);
 		setTimeout(resetSelection, 800);
 		// Check win
-		if (getLegalMoves(game.colorToPlay).length === 0) {
+		if (chess.getLegalMoves(chess.colorToPlay()).length === 0) {
 			// Lose or draw
 			$("thinking").style.visibility = "hidden";
 			// Show popup
@@ -299,23 +297,25 @@ function getElemByClass(svgContainer, className) {
 
 // Toggle Show Legal moves ON/OFF
 function toggleShowLegalMoves() {
-	game.options.showLegalMoves = !game.options.showLegalMoves;
-	$("toggleShowLegalMoves").setAttribute("class", "token " + (game.options.showLegalMoves ? "ON" : "OFF"));
+	chess.options.showLegalMoves = !chess.options.showLegalMoves;
+	$("toggleShowLegalMoves").setAttribute("class", "token " + (chess.options.showLegalMoves ? "ON" : "OFF"));
 }
 
 // Toggle sound ON/OFF
 function toggleSound() {
-	if (game.options.sound) {
+	if (chess.options.sound) {
 		audioGood.pause();
 		audioBad.pause();
 	}
-	game.options.sound = !game.options.sound;
-	$("toggleSound").setAttribute("class", "token " + (game.options.sound ? "ON" : "OFF"));
+	chess.options.sound = !chess.options.sound;
+	$("toggleSound").setAttribute("class", "token " + (chess.options.sound ? "ON" : "OFF"));
 }
 
 // Highlight legal moves for tile
 function showLegalMovesForTile(tile) {
-	var moves = removeIllegalMoves(getMovesForTile(game.colorToPlay, parseInt(tile.getAttribute("data-row")), parseInt(tile.getAttribute("data-col"))), game.colorToPlay);
+	var moves = chess.getLegalMoves().filter(function(move) {
+		return move.row1 === parseInt(tile.getAttribute("data-row")) && move.col1 === parseInt(tile.getAttribute("data-col"));
+	});
 	for (var m=0; m<moves.length; m++) {
 		var c = document.createElementNS(NS_SVG, "circle");
 		c.setAttribute("cx", String(moves[m].col2*12.5+6.25) + "%");
@@ -343,8 +343,8 @@ function hideLegalMoves() {
 function rotateBoard() {
 	var svg = $("svg");
 	// Swap white on top flag
-	game.options.whiteOnTop = !game.options.whiteOnTop;
-	if (game.options.whiteOnTop) {
+	chess.options.whiteOnTop = !chess.options.whiteOnTop;
+	if (chess.options.whiteOnTop) {
 		// Rotate board
 		svg.setAttribute("class", "rotate180");
 		// Rotate pieces
@@ -395,11 +395,11 @@ function redrawBoard() {
 // Unplay the last move
 function unplayLastMove() {
 	// Check if there is one
-	if (game.history.length === 0) return;
+	if (chess.history.length === 0) return;
 	// Unplay the last move
-	unplay(game.history[game.history.length - 1]);
+	chess.unplay(chess.history[chess.history.length - 1]);
 	// If computer unplay its move too
-	if (game.players[game.colorToPlay] === COMPUTER) unplay(game.history[game.history.length - 1]);
+	if (chess.options.players[chess.colorToPlay()] === chess.COMPUTER) chess.unplay(chess.history[chess.history.length - 1]);
 	// Redraw the board
 	redrawBoard();
 	// Update color to play <div>
@@ -409,7 +409,7 @@ function unplayLastMove() {
 // Restart the game
 function restartGame() {
 	// Check if the game started
-	if (game.history.length === 0) return;
+	if (chess.history.length === 0) return;
 	// Restart (by unplaying all moves)
 	restart();
 	// Redraw the board
@@ -420,7 +420,7 @@ function restartGame() {
 
 // Update color to play <div>
 function updateColorToPlay() {
-	$("colorToPlay").setAttribute("class", "token " + COLOR_NAMES[game.colorToPlay]);
+	$("colorToPlay").setAttribute("class", "token " + COLOR_NAMES[chess.colorToPlay()]);
 }
 
 // Show promotion popup
@@ -438,7 +438,7 @@ function initPromotionPopup(color) {
 	var group = $("prom_" + COLOR_NAMES[color]);
 	// Create the 4 images
 	var images = group.getElementsByTagName("image");
-	for (var i = 0, piece = QUEEN; i < 4; i ++, piece ++) {
+	for (var i = 0, piece = chess.QUEEN; i < 4; i ++, piece ++) {
 		images[i].setAttributeNS(NS_XLINK, "xlink:href", "img/" + PIECE_NAMES[piece] + "_" + COLOR_NAMES[color] + ".svg");
 		images[i].setAttribute("data-piece", piece);
 		images[i].addEventListener("click", promotionPieceClicked);
@@ -488,15 +488,15 @@ function unplayAfterLose(evt) {
 
 // Restart the game by unplaying all history moves
 function restart() {
-   while(game.history.length > 0) {
-        unplay(game.history[game.history.length - 1]);
+   while(chess.history.length > 0) {
+        chess.unplay(chess.history[chess.history.length - 1]);
     }
 }
 
 // Called by dumb-client
 function getLegalMove(row1, col1, row2, col2, promote) {
-    var legal = removeIllegalMoves(getMovesForTile(game.colorToPlay, row1, col1), game.colorToPlay);
-    for (var m = 0; m < legal.length; m ++) {
-        if (legal[m].row2 === row2 && legal[m].col2 === col2 && legal[m].promote == promote) return legal[m];
-    }
+	var legal = chess.getLegalMoves(chess.colorToPlay()).filter(function(m) {
+		return m.row1 === row1 && m.col1 === col1 && m.row2 === row2 && m.col2 === col2 && m.promote === promote;
+	});
+	if (legal.length === 1) return legal[0];
 }
