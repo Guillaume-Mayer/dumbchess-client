@@ -99,14 +99,15 @@
     };
 
     // AI options
-    var negaMaxDepth = 5;
+    var negaMaxDepth = 4;
     var quiescence = false;
-    var coefM = 9;  // Mobility
+    var coefM = 7;  // Mobility
     var coefP = 1;  // Positional (bonuses)
 
     // Temp variables
-    var _capture;           // Store the capture piece (isCapturableTile & isAttackableTile)
-    var _thinking = false;  // Used to exclude promote to bishop or rook when computer thinks (getMovesForPawn & getBestMove)
+    var _capture;               // Store the capture piece (isCapturableTile & isAttackableTile)
+    var _thinking = false;      // Used to exclude promote to bishop or rook when computer thinks (getMovesForPawn & getBestMove)
+    var _castling = [-1, -1];   // Castling in think line
 
     // Move object
     /** @constructor */
@@ -787,8 +788,8 @@
         var score = 0;
         // Pawns advancement: 0 (start row) to 5 (row before promote)
         var advancement = [
-            [0, 5, 4, 3, 2, 1, 0, 0], // For black
-            [0, 0, 1, 2, 3, 4, 5, 0]  // For white
+            [0, 25, 16, 9, 4, 1, 0, 0], // For black
+            [0, 0, 1, 4, 9, 16, 25, 0]  // For white
         ];
         // Dubbled pawns : -5 each
         var dubbled = -5;
@@ -808,6 +809,40 @@
             if (colCount[color] > 1) score += dubbled*(colCount[color] - 1);
             if (colCount[1 - color] > 1) score -= dubbled*(colCount[1 - color] - 1)
         }
+        // Beginning phase
+        if (history.length <= 16) {
+            // Malus for unmoved minor pieces
+            var unmovedMinor = -40,
+                unmovedQueen = 400;
+            // - White
+            if (pos.board[0][1] && pos.board[0][1].piece === KNIGHT && pos.board[0][1].color === WHITE) score += unmovedMinor * (color === WHITE ? 1 : -1);
+            if (pos.board[0][2] && pos.board[0][2].piece === BISHOP && pos.board[0][2].color === WHITE) score += unmovedMinor * (color === WHITE ? 1 : -1);
+            if (pos.board[0][5] && pos.board[0][5].piece === BISHOP && pos.board[0][5].color === WHITE) score += unmovedMinor * (color === WHITE ? 1 : -1);
+            if (pos.board[0][6] && pos.board[0][6].piece === KNIGHT && pos.board[0][6].color === WHITE) score += unmovedMinor * (color === WHITE ? 1 : -1);
+            // - Black
+            if (pos.board[7][1] && pos.board[7][1].piece === KNIGHT && pos.board[7][1].color === BLACK) score += unmovedMinor * (color === BLACK ? 1 : -1);
+            if (pos.board[7][2] && pos.board[7][2].piece === BISHOP && pos.board[7][2].color === BLACK) score += unmovedMinor * (color === BLACK ? 1 : -1);
+            if (pos.board[7][5] && pos.board[7][5].piece === BISHOP && pos.board[7][5].color === BLACK) score += unmovedMinor * (color === BLACK ? 1 : -1);
+            if (pos.board[7][6] && pos.board[7][6].piece === KNIGHT && pos.board[7][6].color === BLACK) score += unmovedMinor * (color === BLACK ? 1 : -1);
+            // Bonus for unmoved queen
+            if (pos.board[0][3] && pos.board[0][3].piece === QUEEN && pos.board[0][3].color === WHITE) score += unmovedQueen * (color === WHITE ? 1 : -1);
+            if (pos.board[7][3] && pos.board[7][3].piece === QUEEN && pos.board[7][3].color === BLACK) score += unmovedQueen * (color === BLACK ? 1 : -1);
+        }
+        // Castling bonuses
+        /* TODO
+        var castledKing  = 200,
+            castledQueen = 160;
+        var canCastleKingSide   = 100,
+            canCastleQueenSide  = 80;
+        // - Color to play       
+        if (pos.canCastleKingSide[color]) {
+            // - Give a bonus if castling is still possible
+        } else {
+            // - Give a better bonus if castling was done
+            // Check the thinking line
+            // Check the history
+        }
+        */
         return score;
     }
 
@@ -861,11 +896,11 @@
     // Get the best move for the current position using classic NegaMax
     function getBestMove() {
         _thinking = true;
-        console.profile("negamax");
+        //console.profile("negamax");
         console.time("negamax")
         var negaMaxObj = negaMax(negaMaxDepth, -Infinity, +Infinity);
         console.timeEnd("negamax")
-        console.profileEnd("negamax");
+        //console.profileEnd("negamax");
         _thinking = false;
         if (negaMaxObj.moves.length) {
             console.log("NegaMax(" + negaMaxDepth + "): " + negaMaxObj.score + " [" + negaMaxObj.moves.map(moveToStr).join(", ") + "]");
