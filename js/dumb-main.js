@@ -19,6 +19,7 @@ $("pan-side2").addEventListener("click", resetSelection);
 $("toggleShowLegalMoves").setAttribute("class", "token " + (chess.options.showLegalMoves ? "ON" : "OFF"));
 $("toggleSound"         ).setAttribute("class", "token " + (chess.options.sound          ? "ON" : "OFF"));
 $("rotateBoard"         ).setAttribute("class", "token " + (chess.options.whiteOnTop     ? "ON" : "OFF"));
+$("toggleLevel"         ).setAttribute("class", "token " + chess.getLevel());
 
 // Action button listeners
 $("toggleShowLegalMoves").addEventListener("click", toggleShowLegalMoves);
@@ -26,6 +27,7 @@ $("toggleSound"         ).addEventListener("click", toggleSound);
 $("rotateBoard"         ).addEventListener("click", rotateBoard);
 $("unplayLastMove"      ).addEventListener("click", unplayLastMove);
 $("restartGame"         ).addEventListener("click", restartGame);
+$("toggleLevel"         ).addEventListener("click", toggleLevel);
 
 // Init promotion popup
 initPromotionPopup(chess.BLACK);

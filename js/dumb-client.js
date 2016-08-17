@@ -500,3 +500,14 @@ function getLegalMove(row1, col1, row2, col2, promote) {
 	});
 	if (legal.length === 1) return legal[0];
 }
+
+function toggleLevel() {
+	if (chess.getLevel() == "EASY") {
+		chess.setLevel("MEDIUM"); 
+	} else if (chess.getLevel() == "MEDIUM") {
+		chess.setLevel("HARD");
+	} else if (chess.getLevel() == "HARD") {
+		chess.setLevel("EASY");
+	}
+	$("toggleLevel").setAttribute("class", "token " + chess.getLevel());
+}

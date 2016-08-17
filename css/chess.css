@@ -130,6 +130,27 @@ a:hover {
 	transform: rotate(180deg);
 }
 
+.EASY {
+	background-color: green;
+	cursor: pointer;
+}
+.EASY::after {
+	content: "EASY";
+}
+.MEDIUM {
+	background-color: yellow;
+	cursor: pointer;
+}
+.MEDIUM::after {
+	content: "MEDIUM";
+}
+.HARD {
+	background-color: red;
+	cursor: pointer;
+}
+.HARD::after {
+	content: "HARD";
+}
 /* Popup background spans acroos the whole page
    it's dark and disallow mouse events */
 .popup {
