@@ -100,9 +100,9 @@
 
     // AI options
     var negaMaxDepth = 4;
-    var quiescence = false;
-    var coefM = 7;  // Mobility
-    var coefP = 1;  // Positional (bonuses)
+    var quiescence = false; // TODO
+    var coefM = 7;          // Mobility
+    var coefP = 1;          // Positional (bonuses)
 
     // Temp variables
     var _capture;               // Store the capture piece (isCapturableTile & isAttackableTile)
@@ -669,10 +669,12 @@
             // Move king-side rook
             pos.board[move.row1][5] = pos.board[move.row1][7];
             pos.board[move.row1][7] = 0;
+            if (_thinking) _castling[color] = KING;
         } else if (move.castling === QUEEN) {
             // Move queen-side rook
             pos.board[move.row1][3] = pos.board[move.row1][0];
             pos.board[move.row1][0] = 0;
+            if (_thinking) _castling[color] = QUEEN;
         } else if (move.promote) {
             // Promotion
             pos.board[move.row2][move.col2].piece = move.promote;
@@ -728,10 +730,12 @@
                 // Replace king-side rook
                 pos.board[move.row1][7] = pos.board[move.row1][5];
                 pos.board[move.row1][5] = 0;
+                if (_thinking) _castling[color] = -1;
             } else if (move.castling === QUEEN) {
                 // Replace queen-side rook
                 pos.board[move.row1][0] = pos.board[move.row1][3];
                 pos.board[move.row1][3] = 0;
+                if (_thinking) _castling[color] = -1;
             }
             // Keep king tracked
             kingRow[color] = move.row1;
@@ -786,13 +790,13 @@
     // Positional bonuses
     function evalPositional(color) {
         var score = 0;
-        // Pawns advancement: 0 (start row) to 5 (row before promote)
+        // Pawns advancement bonus
         var advancement = [
-            [0, 25, 16, 9, 4, 1, 0, 0], // For black
-            [0, 0, 1, 4, 9, 16, 25, 0]  // For white
+            [0, 200, 40, 30, 25, 10, 0, 0], // For black
+            [0, 0, 10, 25, 30, 40, 200, 0]  // For white
         ];
-        // Dubbled pawns : -5 each
-        var dubbled = -5;
+        // Dubbled pawns malus
+        var dubbled = -75;
         // Pawn loop        
         for (var col = 8; col--;) {
             var colCount = [0, 0];
@@ -810,10 +814,9 @@
             if (colCount[1 - color] > 1) score -= dubbled*(colCount[1 - color] - 1)
         }
         // Beginning phase
-        if (history.length <= 16) {
+        if (history.length + negaMaxDepth <= 32) {
             // Malus for unmoved minor pieces
-            var unmovedMinor = -40,
-                unmovedQueen = 400;
+            var unmovedMinor = -50;
             // - White
             if (pos.board[0][1] && pos.board[0][1].piece === KNIGHT && pos.board[0][1].color === WHITE) score += unmovedMinor * (color === WHITE ? 1 : -1);
             if (pos.board[0][2] && pos.board[0][2].piece === BISHOP && pos.board[0][2].color === WHITE) score += unmovedMinor * (color === WHITE ? 1 : -1);
@@ -824,25 +827,59 @@
             if (pos.board[7][2] && pos.board[7][2].piece === BISHOP && pos.board[7][2].color === BLACK) score += unmovedMinor * (color === BLACK ? 1 : -1);
             if (pos.board[7][5] && pos.board[7][5].piece === BISHOP && pos.board[7][5].color === BLACK) score += unmovedMinor * (color === BLACK ? 1 : -1);
             if (pos.board[7][6] && pos.board[7][6].piece === KNIGHT && pos.board[7][6].color === BLACK) score += unmovedMinor * (color === BLACK ? 1 : -1);
-            // Bonus for unmoved queen
-            if (pos.board[0][3] && pos.board[0][3].piece === QUEEN && pos.board[0][3].color === WHITE) score += unmovedQueen * (color === WHITE ? 1 : -1);
-            if (pos.board[7][3] && pos.board[7][3].piece === QUEEN && pos.board[7][3].color === BLACK) score += unmovedQueen * (color === BLACK ? 1 : -1);
+            // Early queen move
+            if (history.length + negaMaxDepth <= 16) {
+                // Bonus for unmoved queen
+                var unmovedQueen = 200;
+                if (pos.board[0][3] && pos.board[0][3].piece === QUEEN && pos.board[0][3].color === WHITE) score += unmovedQueen * (color === WHITE ? 1 : -1);
+                if (pos.board[7][3] && pos.board[7][3].piece === QUEEN && pos.board[7][3].color === BLACK) score += unmovedQueen * (color === BLACK ? 1 : -1);
+            }
         }
         // Castling bonuses
-        /* TODO
         var castledKing  = 200,
-            castledQueen = 160;
-        var canCastleKingSide   = 100,
-            canCastleQueenSide  = 80;
+            castledQueen = 180;
+        var canCastleKingSide  = 50,
+            canCastleQueenSide = 40;
         // - Color to play       
-        if (pos.canCastleKingSide[color]) {
+        if (pos.canCastleKingSide[color] || pos.canCastleQueenSide[color]) {
             // - Give a bonus if castling is still possible
+            if (pos.canCastleKingSide[color])  score += canCastleKingSide;
+            if (pos.canCastleQueenSide[color]) score += canCastleQueenSide;
         } else {
             // - Give a better bonus if castling was done
             // Check the thinking line
-            // Check the history
+            if (_castling[color] === KING) {
+                score += castledKing;
+            } else if (_castling[color] === QUEEN) {
+                score += castledQueen;
+            } else {
+                // Check the history
+                var m;
+                if (m = history.find(function(move, index) {
+                    return ((index % 2) === (1 - color) && move.castling !== -1);
+                })) score += (m.castling === KING ? castledKing : castledQueen);
+            }
         }
-        */
+        // - Other color      
+        if (pos.canCastleKingSide[1 - color] || pos.canCastleQueenSide[1 - color]) {
+            // - Give a bonus if castling is still possible
+            if (pos.canCastleKingSide[1 - color])  score -= canCastleKingSide;
+            if (pos.canCastleQueenSide[1 - color]) score -= canCastleQueenSide;
+        } else {
+            // - Give a better bonus if castling was done
+            // Check the thinking line
+            if (_castling[1 - color] === KING) {
+                score -= castledKing;
+            } else if (_castling[1 - color] === QUEEN) {
+                score -= castledQueen;
+            } else {
+                // Check the history
+                var m;
+                if (m = history.find(function(move, index) {
+                    return ((index % 2) === color && move.castling !== -1);
+                })) score -= (m.castling === KING ? castledKing : castledQueen);
+            }
+        }
         return score;
     }
 
@@ -1012,6 +1049,18 @@
         unplay : function(move) {
             unplay(move);
             history.pop();
+        },
+        setLevel : function(level) {
+            if (level == "EASY") {
+                negaMaxDepth = 3;
+            } else if (level == "HARD") {
+                negaMaxDepth = 5;
+            } else {
+                negaMaxDepth = 4;
+            }
+        },
+        getLevel : function() {
+            return (negaMaxDepth === 3 ? "EASY" : (negaMaxDepth === 5 ? "HARD" : "MEDIUM"));
         },
         getBestMove : getBestMove,
         moveToStr : moveToStr,
