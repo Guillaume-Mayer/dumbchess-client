@@ -200,7 +200,7 @@ function playMove(move) {
 	// Special move stuff
 	if (move.enPassant) {
 		// Find and remove the pawn image
-		var pawn = getPieceAt(PAWN, chess.colorToPlay() == chess.WHITE ? 4 : 3, move.col2);
+		var pawn = getPieceAt(chess.PAWN, chess.colorToPlay() == chess.WHITE ? 4 : 3, move.col2);
 		getTileFromPiece(pawn).addEventListener("click", tileClicked);
 		gPieces.removeChild(pawn);
 	} else if (move.castling == chess.KING) {

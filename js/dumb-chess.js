@@ -77,8 +77,10 @@
         [new Piece(BLACK, PAWN), new Piece(BLACK, PAWN), new Piece(BLACK, PAWN), new Piece(BLACK, PAWN), new Piece(BLACK, PAWN), new Piece(BLACK, PAWN), new Piece(BLACK, PAWN), new Piece(BLACK, PAWN)],
         [new Piece(BLACK, ROOK), new Piece(BLACK, KNIGHT), new Piece(BLACK, BISHOP), new Piece(BLACK, QUEEN), new Piece(BLACK, KING), new Piece(BLACK, BISHOP), new Piece(BLACK, KNIGHT), new Piece(BLACK, ROOK)]
         ],
-        // Two push columns for en passant
-        twoPushCol : [-1, -1]
+        // Two push column for en passant
+        twoPushCol : -1,
+        // Half-move counter TODO
+        halfMoveCount : 0
     };
 
     // Kings positions
@@ -271,7 +273,7 @@
                         moves.push(new Move(PAWN, row + sens, col - 1, row, col).Capture(_capture).Promote(ROOK));
                     }
                 }
-            } else if (ep_row && pos.twoPushCol[1 - color] === col - 1) {
+            } else if (ep_row && pos.twoPushCol === col - 1 && color === pos.colorToPlay) {
                 moves.push(new Move(PAWN, row + sens, col - 1, row, col).Capture(PAWN).EnPassant());
             }
         }
@@ -288,7 +290,7 @@
                         moves.push(new Move(PAWN, row + sens, col + 1, row, col).Capture(_capture).Promote(ROOK));
                     }
                 }
-            } else if (ep_row && pos.twoPushCol[1 - color] === col + 1) {
+            } else if (ep_row && pos.twoPushCol === col + 1 && color === pos.colorToPlay) {
                 moves.push(new Move(PAWN, row + sens, col + 1, row, col).Capture(PAWN).EnPassant());
             }
         }
@@ -680,16 +682,16 @@
             pos.board[move.row2][move.col2].piece = move.promote;
         }
         // Store two-push state so it can be restored on unplay
-        move.twoPushColWas = pos.twoPushCol[color];
-        if (move.piece === PAWN && ((move.row1 === 1 && move.row2 === 3) || (move.row1 === 6 && move.row2 === 4))) {
-            // Store the column
-            pos.twoPushCol[color] = move.col1;
-        } else {
-            // Reset
-            pos.twoPushCol[color] = -1;
+        if (color === pos.colorToPlay) {
+            move.twoPushColWas = pos.twoPushCol;
+            if (move.piece === PAWN && ((move.row1 === 1 && move.row2 === 3) || (move.row1 === 6 && move.row2 === 4))) {
+                // Store the column
+                pos.twoPushCol = move.col1;
+            } else {
+                // Reset
+                pos.twoPushCol = -1;
+            }
         }
-        // Always reset bad side two-push
-        pos.twoPushCol[1 - color] = -1;
         // Keep track of king (to find it faster on check test)
         if (move.piece === KING) {
             kingRow[color] = move.row2;
@@ -741,13 +743,13 @@
             kingRow[color] = move.row1;
             kingCol[color] = move.col1;
         }
-        // Restore two-push
-        pos.twoPushCol[color] = move.twoPushColWas;
         // Restore castling flags
         if (move.preventsCastleKingSide)  pos.canCastleKingSide[color]  = 1;
         if (move.preventsCastleQueenSide) pos.canCastleQueenSide[color] = 1;
         // Swap color to play
         pos.colorToPlay = (1 - pos.colorToPlay);
+        // Restore two-push
+        if (color === pos.colorToPlay) pos.twoPushCol = move.twoPushColWas;
     }
 
     // **************************************************
@@ -792,8 +794,8 @@
         var score = 0;
         // Pawns advancement bonus
         var advancement = [
-            [0, 200, 40, 30, 25, 10, 0, 0], // For black
-            [0, 0, 10, 25, 30, 40, 200, 0]  // For white
+            [0, 200, 50, 40, 30, 20, 0, 0], // For black
+            [0, 0, 20, 30, 40, 50, 200, 0]  // For white
         ];
         // Dubbled pawns malus
         var dubbled = -75;
@@ -816,7 +818,7 @@
         // Beginning phase
         if (history.length + negaMaxDepth <= 32) {
             // Malus for unmoved minor pieces
-            var unmovedMinor = -50;
+            var unmovedMinor = -70;
             // - White
             if (pos.board[0][1] && pos.board[0][1].piece === KNIGHT && pos.board[0][1].color === WHITE) score += unmovedMinor * (color === WHITE ? 1 : -1);
             if (pos.board[0][2] && pos.board[0][2].piece === BISHOP && pos.board[0][2].color === WHITE) score += unmovedMinor * (color === WHITE ? 1 : -1);
@@ -836,10 +838,10 @@
             }
         }
         // Castling bonuses
-        var castledKing  = 200,
-            castledQueen = 180;
-        var canCastleKingSide  = 50,
-            canCastleQueenSide = 40;
+        var castleKing  = 250,
+            castleQueen = 200;
+        var canCastleKingSide  = 100,
+            canCastleQueenSide =  80;
         // - Color to play       
         if (pos.canCastleKingSide[color] || pos.canCastleQueenSide[color]) {
             // - Give a bonus if castling is still possible
@@ -849,15 +851,9 @@
             // - Give a better bonus if castling was done
             // Check the thinking line
             if (_castling[color] === KING) {
-                score += castledKing;
+                score += castleKing;
             } else if (_castling[color] === QUEEN) {
-                score += castledQueen;
-            } else {
-                // Check the history
-                var m;
-                if (m = history.find(function(move, index) {
-                    return ((index % 2) === (1 - color) && move.castling !== -1);
-                })) score += (m.castling === KING ? castledKing : castledQueen);
+                score += castleQueen;
             }
         }
         // - Other color      
@@ -869,15 +865,9 @@
             // - Give a better bonus if castling was done
             // Check the thinking line
             if (_castling[1 - color] === KING) {
-                score -= castledKing;
+                score -= castleKing;
             } else if (_castling[1 - color] === QUEEN) {
-                score -= castledQueen;
-            } else {
-                // Check the history
-                var m;
-                if (m = history.find(function(move, index) {
-                    return ((index % 2) === color && move.castling !== -1);
-                })) score -= (m.castling === KING ? castledKing : castledQueen);
+                score -= castleQueen;
             }
         }
         return score;
