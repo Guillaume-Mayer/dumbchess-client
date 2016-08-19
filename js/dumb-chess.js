@@ -44,7 +44,7 @@
     ];
 
     // Evaluation constants
-    const MATE      = 999999999;
+    const MATE      = -999999999;
     const DRAW      = 0;
 
     // Game constants
@@ -79,7 +79,7 @@
         ],
         // Two push column for en passant
         twoPushCol : -1,
-        // Half-move counter TODO
+        // Half-move counter
         halfMoveCount : 0
     };
 
@@ -126,6 +126,7 @@
         this.twoPushColWas = -1;
         this.preventsCastleKingSide = 0;
         this.preventsCastleQueenSide = 0;
+        this.halfMoveCountWas = -1;
     }
 
     // Assign captured piece and returns instance for chaining purpose
@@ -167,6 +168,46 @@
         tileId(move.row2, move.col2) +
         (move.enPassant ? "ep" : (move.promote ? PIECE_ALG[move.promote] : ""));
     };
+
+    // FEN format
+    function posToFen() {
+        // Board
+        var fenBoard = "";
+        for (var row = 8; row--;) {
+            var countEmpty = 0;
+            for (var col = 0; col < 8; col++) {
+                var piece = pos.board[row][col];
+                if (piece) {
+                    if (countEmpty) {
+                        fenBoard += countEmpty.toString();
+                        countEmpty = 0;
+                    }
+                    fenBoard += (piece.color === WHITE ? "KQRBNP" : "kqrbnp").charAt(piece.piece);
+                } else {
+                    countEmpty ++;
+                }
+            }
+            if (countEmpty) fenBoard += countEmpty.toString();
+            if (row) fenBoard += "/"
+        }
+        // Castling rights
+        var fenCastling = "";
+        if (canCastleKingSide(WHITE) || canCastleQueenSide(WHITE) || canCastleKingSide(BLACK) || canCastleQueenSide(BLACK)) {
+            if (canCastleKingSide( WHITE)) fenCastling += "K";
+            if (canCastleQueenSide(WHITE)) fenCastling += "Q";
+            if (canCastleKingSide( BLACK)) fenCastling += "k";
+            if (canCastleQueenSide(BLACK)) fenCastling += "q";
+        } else {
+            fenCastling = "-";
+        }
+        // Return the full FEN string
+        return fenBoard + " "
+            + (pos.colorToPlay === WHITE ? "w" : "b") + " "
+            + fenCastling + " "
+            + (pos.twoPushCol === -1 ? "-" : LETTERS.charAt(pos.twoPushCol) + (pos.colorToPlay === WHITE ? "6" : "3")) + " "
+            + pos.halfMoveCount + " "
+            + (1 + Math.floor(history.length / 2));
+    }
 
     // Get legal moves
     function getLegalMoves(color) {
@@ -427,26 +468,36 @@
             }
         }
         // Castling
-        if (pos.canCastleKingSide[color]) {
+        if (canCastleKingSide(color)) {
             // King-side castling
             if (!pos.board[row][5] && !pos.board[row][6]) {
-                if (pos.board[row][7] && pos.board[row][7].piece === ROOK && pos.board[row][7].color === color) {
-                    if (!isAttackedTile(row, 4, color) && !isAttackedTile(row, 5, color) && !isAttackedTile(row, 6, color)) {
-                        moves.push(new Move(KING, row, 6, row, 4).Castling(KING));
-                    }
+                if (!isAttackedTile(row, 4, color) && !isAttackedTile(row, 5, color) && !isAttackedTile(row, 6, color)) {
+                    moves.push(new Move(KING, row, 6, row, 4).Castling(KING));
                 }
             }
         }
-        if (pos.canCastleQueenSide[color]) {
+        if (canCastleQueenSide(color)) {
             // Queen-side castling
             if (!pos.board[row][3] && !pos.board[row][2] && !pos.board[row][1]) {
-                if (pos.board[row][0] && pos.board[row][0].piece === ROOK && pos.board[row][0].color === color) {
-                    if (!isAttackedTile(row, 4, color) && !isAttackedTile(row, 3, color) && !isAttackedTile(row, 2, color)) {
-                        moves.push(new Move(KING, row, 2, row, 4).Castling(QUEEN));
-                    }
+                if (!isAttackedTile(row, 4, color) && !isAttackedTile(row, 3, color) && !isAttackedTile(row, 2, color)) {
+                    moves.push(new Move(KING, row, 2, row, 4).Castling(QUEEN));
                 }
             }
         }
+    }
+
+    function canCastleKingSide(color) {
+        // Check king-side castle flag AND that rook has not been captured
+        if (!pos.canCastleKingSide[color]) return false;
+        var row = (color === WHITE ? 0 : 7);
+        return (pos.board[row][7] && pos.board[row][7].color === color);
+    }
+
+    function canCastleQueenSide(color) {
+        // Check queen-side castle flag AND that rook has not been captured
+        if (!pos.canCastleQueenSide[color]) return false;
+        var row = (color === WHITE ? 0 : 7);
+        return (pos.board[row][0] && pos.board[row][0].color === color);
     }
 
     function getMovesForQueen(color, moves, row, col) {
@@ -692,6 +743,7 @@
                 pos.twoPushCol = -1;
             }
             // Half-move counter
+            move.halfMoveCountWas = pos.halfMoveCount;
             if (move.piece === PAWN || move.capture) {
                 pos.halfMoveCount = 0;
             } else {
@@ -754,8 +806,11 @@
         if (move.preventsCastleQueenSide) pos.canCastleQueenSide[color] = 1;
         // Swap color to play
         pos.colorToPlay = (1 - pos.colorToPlay);
-        // Restore two-push
-        if (color === pos.colorToPlay) pos.twoPushCol = move.twoPushColWas;
+        // Restore two-push and half-move counter
+        if (color === pos.colorToPlay) {
+            pos.twoPushCol = move.twoPushColWas;
+            pos.halfMoveCount = move.halfMoveCountWas;
+        }
     }
 
     // **************************************************
@@ -846,13 +901,13 @@
         // Castling bonuses
         var castleKing  = 250,
             castleQueen = 200;
-        var canCastleKingSide  = 100,
-            canCastleQueenSide =  80;
+        var canCastleKing  = 100,
+            canCastleQueen =  80;
         // - Color to play       
-        if (pos.canCastleKingSide[color] || pos.canCastleQueenSide[color]) {
+        if (canCastleKingSide(color) || canCastleQueenSide(color)) {
             // - Give a bonus if castling is still possible
-            if (pos.canCastleKingSide[color])  score += canCastleKingSide;
-            if (pos.canCastleQueenSide[color]) score += canCastleQueenSide;
+            if (canCastleKingSide( color)) score += canCastleKing;
+            if (canCastleQueenSide(color)) score += canCastleQueen;
         } else {
             // - Give a better bonus if castling was done
             // Check the thinking line
@@ -863,10 +918,10 @@
             }
         }
         // - Other color      
-        if (pos.canCastleKingSide[1 - color] || pos.canCastleQueenSide[1 - color]) {
+        if (canCastleKingSide(1 - color) || canCastleQueenSide(1 - color)) {
             // - Give a bonus if castling is still possible
-            if (pos.canCastleKingSide[1 - color])  score -= canCastleKingSide;
-            if (pos.canCastleQueenSide[1 - color]) score -= canCastleQueenSide;
+            if (canCastleKingSide( 1 - color)) score -= canCastleKing;
+            if (canCastleQueenSide(1 - color)) score -= canCastleQueen;
         } else {
             // - Give a better bonus if castling was done
             // Check the thinking line
@@ -1060,6 +1115,7 @@
         },
         getBestMove : getBestMove,
         moveToStr : moveToStr,
+        posToFen : posToFen,
         tileId : tileId,
         BLACK : BLACK,
         WHITE : WHITE,
