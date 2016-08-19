@@ -44,7 +44,7 @@
     ];
 
     // Evaluation constants
-    const MATE      = -Infinity;
+    const MATE      = 999999999;
     const DRAW      = 0;
 
     // Game constants
@@ -107,9 +107,9 @@
     var coefP = 1;          // Positional (bonuses)
 
     // Temp variables
-    var _capture;               // Store the capture piece (isCapturableTile & isAttackableTile)
-    var _thinking = false;      // Used to exclude promote to bishop or rook when computer thinks (getMovesForPawn & getBestMove)
-    var _castling = [-1, -1];   // Castling in think line
+    var _capture;   // Store the capture piece (isCapturableTile & isAttackableTile)
+    var _thinking;  // Used to exclude promote to bishop or rook when computer thinks (getMovesForPawn & getBestMove)
+    var _castling;  // Castling in think line
 
     // Move object
     /** @constructor */
@@ -210,23 +210,23 @@
         if (pos.board[row][col].color != color) return;
         switch (pos.board[row][col].piece) {
             case PAWN:
-            getMovesForPawn(color, moves, row, col);
-            break;
+                getMovesForPawn(color, moves, row, col);
+                break;
             case ROOK:
-            getMovesForRook(color, moves, row, col, ROOK);
-            break;
+                getMovesForRook(color, moves, row, col, ROOK);
+                break;
             case BISHOP:
-            getMovesForBishop(color, moves, row, col, BISHOP);
-            break;
+                getMovesForBishop(color, moves, row, col, BISHOP);
+                break;
             case KNIGHT:
-            getMovesForKnight(color, moves, row, col);
-            break;
+                getMovesForKnight(color, moves, row, col);
+                break;
             case KING:
-            getMovesForKing(color, moves, row, col);
-            break;
+                getMovesForKing(color, moves, row, col);
+                break;
             case QUEEN:
-            getMovesForQueen(color, moves, row, col);
-            break;
+                getMovesForQueen(color, moves, row, col);
+                break;
         }
     }
 
@@ -681,8 +681,8 @@
             // Promotion
             pos.board[move.row2][move.col2].piece = move.promote;
         }
-        // Store two-push state so it can be restored on unplay
         if (color === pos.colorToPlay) {
+            // Store two-push state so it can be restored on unplay
             move.twoPushColWas = pos.twoPushCol;
             if (move.piece === PAWN && ((move.row1 === 1 && move.row2 === 3) || (move.row1 === 6 && move.row2 === 4))) {
                 // Store the column
@@ -690,6 +690,12 @@
             } else {
                 // Reset
                 pos.twoPushCol = -1;
+            }
+            // Half-move counter
+            if (move.piece === PAWN || move.capture) {
+                pos.halfMoveCount = 0;
+            } else {
+                pos.halfMoveCount ++;
             }
         }
         // Keep track of king (to find it faster on check test)
@@ -923,12 +929,12 @@
     // Get the best move for the current position using classic NegaMax
     function getBestMove() {
         _thinking = true;
-        //console.profile("negamax");
+        _castling = [-1, -1];
         console.time("negamax")
         var negaMaxObj = negaMax(negaMaxDepth, -Infinity, +Infinity);
         console.timeEnd("negamax")
-        //console.profileEnd("negamax");
         _thinking = false;
+        _castling = [-1, -1];
         if (negaMaxObj.moves.length) {
             console.log("NegaMax(" + negaMaxDepth + "): " + negaMaxObj.score + " [" + negaMaxObj.moves.map(moveToStr).join(", ") + "]");
             return negaMaxObj.moves[0];
