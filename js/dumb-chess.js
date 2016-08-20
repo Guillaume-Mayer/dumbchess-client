@@ -105,11 +105,18 @@
     var quiescence = false; // TODO
     var coefM = 7;          // Mobility
     var coefP = 1;          // Positional (bonuses)
+    var useTranspo = false;
 
     // Temp variables
     var _capture;   // Store the capture piece (isCapturableTile & isAttackableTile)
     var _thinking;  // Used to exclude promote to bishop or rook when computer thinks (getMovesForPawn & getBestMove)
     var _castling;  // Castling in think line
+
+    // Transposition table
+    if (useTranspo) {
+        var transpo = new Map();
+        evaluate();
+    }
 
     // Move object
     /** @constructor */
@@ -188,18 +195,15 @@
                 }
             }
             if (countEmpty) fenBoard += countEmpty.toString();
-            if (row) fenBoard += "/"
+            if (row) fenBoard += "/";
         }
         // Castling rights
         var fenCastling = "";
-        if (canCastleKingSide(WHITE) || canCastleQueenSide(WHITE) || canCastleKingSide(BLACK) || canCastleQueenSide(BLACK)) {
-            if (canCastleKingSide( WHITE)) fenCastling += "K";
-            if (canCastleQueenSide(WHITE)) fenCastling += "Q";
-            if (canCastleKingSide( BLACK)) fenCastling += "k";
-            if (canCastleQueenSide(BLACK)) fenCastling += "q";
-        } else {
-            fenCastling = "-";
-        }
+        if (canCastleKingSide( WHITE)) fenCastling += "K";
+        if (canCastleQueenSide(WHITE)) fenCastling += "Q";
+        if (canCastleKingSide( BLACK)) fenCastling += "k";
+        if (canCastleQueenSide(BLACK)) fenCastling += "q";
+        if (fenCastling == "") fenCastling = "-";
         // Return the full FEN string
         return fenBoard + " "
             + (pos.colorToPlay === WHITE ? "w" : "b") + " "
@@ -207,6 +211,41 @@
             + (pos.twoPushCol === -1 ? "-" : LETTERS.charAt(pos.twoPushCol) + (pos.colorToPlay === WHITE ? "6" : "3")) + " "
             + pos.halfMoveCount + " "
             + (1 + Math.floor(history.length / 2));
+    }
+
+    // Get pos unique id (based on fen for now) TODO get a number id
+    function posKey() {
+        // Board
+        var fenBoard = "";
+        for (var row = 8; row--;) {
+            var countEmpty = 0;
+            for (var col = 0; col < 8; col++) {
+                var piece = pos.board[row][col];
+                if (piece) {
+                    if (countEmpty) {
+                        fenBoard += countEmpty.toString();
+                        countEmpty = 0;
+                    }
+                    fenBoard += (piece.color === WHITE ? "KQRBNP" : "kqrbnp").charAt(piece.piece);
+                } else {
+                    countEmpty ++;
+                }
+            }
+            if (countEmpty) fenBoard += countEmpty.toString();
+            if (row) fenBoard += "/";
+        }
+        // Castling rights
+        var fenCastling = "";
+        if (canCastleKingSide( WHITE)) fenCastling += "K";
+        if (canCastleQueenSide(WHITE)) fenCastling += "Q";
+        if (canCastleKingSide( BLACK)) fenCastling += "k";
+        if (canCastleQueenSide(BLACK)) fenCastling += "q";
+        if (fenCastling == "") fenCastling = "-";
+        // Return the full FEN string
+        return fenBoard + " "
+            + (pos.colorToPlay === WHITE ? "w" : "b") + " "
+            + fenCastling + " "
+            + (pos.twoPushCol === -1 ? "-" : LETTERS.charAt(pos.twoPushCol) + (pos.colorToPlay === WHITE ? "6" : "3"));
     }
 
     // Get legal moves
@@ -746,6 +785,7 @@
             move.halfMoveCountWas = pos.halfMoveCount;
             if (move.piece === PAWN || move.capture) {
                 pos.halfMoveCount = 0;
+                if ((!_thinking) && useTranspo) transpo.clear(); 
             } else {
                 pos.halfMoveCount ++;
             }
@@ -813,12 +853,26 @@
         }
     }
 
+    // Check 50 moves draw rule and threefold repetition
+    function isDraw() {
+        if (pos.halfMoveCount < 8) return false;
+        // 50 moves
+        if (pos.halfMoveCount >= 100) return true;
+        // Threefold repetition
+        return false;
+    }
+
     // **************************************************
     // ****************** AI Functions ******************
     // **************************************************
 
     // Evaluate the color position
     function evaluate() {
+        // Search in transpo
+        if (useTranspo) {
+            var key = posKey();
+            if (transpo.has(key)) return transpo.get(key);
+        }
         // Evaluate from color to play point of view
         var color = pos.colorToPlay;
         // Get mobility score (count legal moves)
@@ -835,7 +889,10 @@
         // Get positional score (bonus)
         var positional = evalPositional(color);
         // Ponderate using coefs
-        return material + (coefM * mobility) + (coefP * positional);
+        var score = material + (coefM * mobility) + (coefP * positional)
+        // Store in transpo
+        if (useTranspo) transpo.set(key, score);
+        return score;
     }
 
     // Material evalutation
@@ -855,11 +912,15 @@
         var score = 0;
         // Pawns advancement bonus
         var advancement = [
-            [0, 200, 50, 40, 30, 20, 0, 0], // For black
-            [0, 0, 20, 30, 40, 50, 200, 0]  // For white
+            [0, 70, 60, 50, 30, 10, 0, 0], // For black
+            [0, 0, 10, 30, 50, 60, 70, 0]  // For white
         ];
+        // Pawns center bonus
+        var centering = [0, 10, 20, 40, 40, 20, 10, 0];
         // Dubbled pawns malus
-        var dubbled = -75;
+        var dubbled = -50;
+        // Isolated pawns malus TODO
+        var isolated = -50;
         // Pawn loop        
         for (var col = 8; col--;) {
             var colCount = [0, 0];
@@ -868,6 +929,8 @@
                 if (piece && piece.piece === PAWN) {
                     // Advancement
                     score += advancement[piece.color][row] * (piece.color === color ? 1 : -1);
+                    // Centering
+                    score += centering[col] * (piece.color === color ? 1 : -1);
                     // Count pawns
                     colCount[piece.color] ++;
                 }
@@ -877,9 +940,9 @@
             if (colCount[1 - color] > 1) score -= dubbled*(colCount[1 - color] - 1)
         }
         // Beginning phase
-        if (history.length + negaMaxDepth <= 32) {
+        if (history.length + negaMaxDepth <= 48) {
             // Malus for unmoved minor pieces
-            var unmovedMinor = -70;
+            var unmovedMinor = -30;
             // - White
             if (pos.board[0][1] && pos.board[0][1].piece === KNIGHT && pos.board[0][1].color === WHITE) score += unmovedMinor * (color === WHITE ? 1 : -1);
             if (pos.board[0][2] && pos.board[0][2].piece === BISHOP && pos.board[0][2].color === WHITE) score += unmovedMinor * (color === WHITE ? 1 : -1);
@@ -893,7 +956,7 @@
             // Early queen move
             if (history.length + negaMaxDepth <= 16) {
                 // Bonus for unmoved queen
-                var unmovedQueen = 200;
+                var unmovedQueen = 120;
                 if (pos.board[0][3] && pos.board[0][3].piece === QUEEN && pos.board[0][3].color === WHITE) score += unmovedQueen * (color === WHITE ? 1 : -1);
                 if (pos.board[7][3] && pos.board[7][3].piece === QUEEN && pos.board[7][3].color === BLACK) score += unmovedQueen * (color === BLACK ? 1 : -1);
             }
@@ -985,25 +1048,35 @@
     function getBestMove() {
         _thinking = true;
         _castling = [-1, -1];
-        console.time("negamax")
+        
+        /*console.time("negamax")
         var negaMaxObj = negaMax(negaMaxDepth, -Infinity, +Infinity);
-        console.timeEnd("negamax")
+        console.timeEnd("negamax")*/
+        
+        console.time("iterativeNegaMax");
+        var negaMaxObj = iterativeNegaMax();
+        console.timeEnd("iterativeNegaMax");
+        
+        if (useTranspo) {
+            console.log("Transpo.size: " + transpo.size);
+        }
+        
         _thinking = false;
         _castling = [-1, -1];
         if (negaMaxObj.moves.length) {
-            console.log("NegaMax(" + negaMaxDepth + "): " + negaMaxObj.score + " [" + negaMaxObj.moves.map(moveToStr).join(", ") + "]");
+            console.log("Best move: " + negaMaxObj.score + " [" + negaMaxObj.moves.map(moveToStr).join(", ") + "]");
             return negaMaxObj.moves[0];
         }
     }
 
-    /*
+    
     // Get the best move using iterative deepening
-    function iterativeDeepening() {
-        var start = new Date();
+    function iterativeNegaMax() {
         var negaMaxObj, stats, moves = undefined;
         for (var depth = 1; depth < negaMaxDepth; depth ++) {
             // Get the negaMax for each depth
             negaMaxObj = negaMax(depth, -Infinity, +Infinity, moves);
+            if (negaMaxObj.score === -MATE) return negaMaxObj;
             // Order the move by score descending
             stats = negaMaxObj.stats.sort(function(a,b) {
                 return b.score - a.score;
@@ -1014,15 +1087,10 @@
             });
         }
         // Final depth
-        var negaMaxObj = negaMax(negaMaxDepth, -Infinity, +Infinity, moves);
-        var end = new Date();
-        console.log("Iterative deepening thought for " + (end - start) + "ms");
-        if (negaMaxObj.moves.length) {
-            console.log("NegaMax(" + negaMaxDepth + "): " + negaMaxObj.score + " [" + negaMaxObj.moves.map(moveToStr).join(", ") + "]");
-            return negaMaxObj.moves[0];
-        }
+        return negaMax(negaMaxDepth, -Infinity, +Infinity, moves);
     }
 
+    /*
     // Parrallel thread intents
     var _start, _moves, _workers, _scores, _results;
     function parallelNegaMax() {
@@ -1115,7 +1183,6 @@
         },
         getBestMove : getBestMove,
         moveToStr : moveToStr,
-        posToFen : posToFen,
         tileId : tileId,
         BLACK : BLACK,
         WHITE : WHITE,
@@ -1124,7 +1191,8 @@
         KING : KING,
         ROOK : ROOK,
         COMPUTER : COMPUTER,
-        logEval : logEval
+        logEval : logEval,  // Debug
+        posToFen : posToFen
     };
 
 })()
