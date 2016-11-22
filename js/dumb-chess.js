@@ -96,27 +96,25 @@
         sound : false,
         showLegalMoves : true,
         whiteOnTop : false,
+        // AI options
+        useTranspo : false,
+        useQuiescence : false,
+        negaMaxDepth : 4,
         // Game options
         players : [COMPUTER, HUMAN]
     };
 
     // AI options
-    var negaMaxDepth = 4;
-    var quiescence = false; // TODO
     var coefM = 7;          // Mobility
     var coefP = 1;          // Positional (bonuses)
-    var useTranspo = false;
 
     // Temp variables
     var _capture;   // Store the capture piece (isCapturableTile & isAttackableTile)
     var _thinking;  // Used to exclude promote to bishop or rook when computer thinks (getMovesForPawn & getBestMove)
-    var _castling;  // Castling in think line
+    var _castling;  // Castling in think line, used to encourage castling
 
     // Transposition table
-    if (useTranspo) {
-        var transpo = new Map();
-        evaluate();
-    }
+    var transpo = new Map();
 
     // Move object
     /** @constructor */
@@ -253,9 +251,9 @@
         var moves = [];
         getPseudoLegalMoves(color, moves);
         for (var m = moves.length; m--;) {
-            play(moves[m]);
+            play(moves[m], false);
             var check = isCheck(color);
-            unplay(moves[m]);
+            unplay(moves[m], false);
             if (check) moves.splice(m, 1);
         }
         return moves;
@@ -267,9 +265,9 @@
         getPseudoLegalMoves(color, moves);
         var count = moves.length;
         for (var m = moves.length; m--;) {
-            play(moves[m]);
+            play(moves[m], false);
             if (isCheck(color)) count--;
-            unplay(moves[m]);
+            unplay(moves[m], false);
         }
         return count;
     }
@@ -747,7 +745,7 @@
     }
 
     // Play a move
-    function play(move) {
+    function play(move, for_real) {
         // Get color playing
         var color = pos.board[move.row1][move.col1].color;
         // Apply the move to the current position
@@ -785,7 +783,11 @@
             move.halfMoveCountWas = pos.halfMoveCount;
             if (move.piece === PAWN || move.capture) {
                 pos.halfMoveCount = 0;
-                if ((!_thinking) && useTranspo) transpo.clear(); 
+                if ((!_thinking) && options.useTranspo && for_real) {
+                    var size = transpo.size;
+                    transpo.clear();
+                    console.log("Transpo cleared (" + size + ")");
+                }
             } else {
                 pos.halfMoveCount ++;
             }
@@ -809,7 +811,7 @@
     }
 
     // Unplay a move
-    function unplay(move) {
+    function unplay(move, for_real) {
         // Get color unplaying
         var color = pos.board[move.row2][move.col2].color;
         // Un-apply the move to the current position
@@ -869,9 +871,11 @@
     // Evaluate the color position
     function evaluate() {
         // Search in transpo
-        if (useTranspo) {
+        if (options.useTranspo) {
             var key = posKey();
-            if (transpo.has(key)) return transpo.get(key);
+            if (transpo.has(key)) {
+                return transpo.get(key);
+            }
         }
         // Evaluate from color to play point of view
         var color = pos.colorToPlay;
@@ -879,19 +883,23 @@
         var mobility = countLegalMoves(color);
         // Mate situations
         if (mobility === 0) {
-            if (isCheck(color)) return MATE
-            return DRAW;
+            if (isCheck(color)) {
+                score = MATE;
+            } else {
+                score = DRAW;
+            }
+        } else {
+            // Substract adversary mobility
+            mobility -= countLegalMoves(1 - color);
+            //  Get material score
+            var material = evalMaterial(color);
+            // Get positional score (bonus)
+            var positional = evalPositional(color);
+            // Ponderate using coefs
+            var score = material + (coefM * mobility) + (coefP * positional);
         }
-        // Substract adversary mobility
-        mobility -= countLegalMoves(1 - color);
-        //  Get material score
-        var material = evalMaterial(color);
-        // Get positional score (bonus)
-        var positional = evalPositional(color);
-        // Ponderate using coefs
-        var score = material + (coefM * mobility) + (coefP * positional)
         // Store in transpo
-        if (useTranspo) transpo.set(key, score);
+        if (options.useTranspo) transpo.set(key, score);
         return score;
     }
 
@@ -940,7 +948,7 @@
             if (colCount[1 - color] > 1) score -= dubbled*(colCount[1 - color] - 1)
         }
         // Beginning phase
-        if (history.length + negaMaxDepth <= 48) {
+        if (history.length + options.negaMaxDepth <= 48) {
             // Malus for unmoved minor pieces
             var unmovedMinor = -30;
             // - White
@@ -954,7 +962,7 @@
             if (pos.board[7][5] && pos.board[7][5].piece === BISHOP && pos.board[7][5].color === BLACK) score += unmovedMinor * (color === BLACK ? 1 : -1);
             if (pos.board[7][6] && pos.board[7][6].piece === KNIGHT && pos.board[7][6].color === BLACK) score += unmovedMinor * (color === BLACK ? 1 : -1);
             // Early queen move
-            if (history.length + negaMaxDepth <= 16) {
+            if (history.length + options.negaMaxDepth <= 16) {
                 // Bonus for unmoved queen
                 var unmovedQueen = 120;
                 if (pos.board[0][3] && pos.board[0][3].piece === QUEEN && pos.board[0][3].color === WHITE) score += unmovedQueen * (color === WHITE ? 1 : -1);
@@ -1021,12 +1029,12 @@
         // Loop moves
         for (var m = 0; m < moves.length; m++) {
             // Play the move
-            play(moves[m]);
+            play(moves[m], false);
             // Negative recursive evaluation
             var negaMaxObj = negaMax(depth - 1, -beta, -alpha);
             var score = -negaMaxObj.score;
             // Unplay the move
-            unplay(moves[m]);
+            unplay(moves[m], false);
             // Keep best move and score
             if (score > bestScore) {
                 bestScore = score;
@@ -1048,23 +1056,14 @@
     function getBestMove() {
         _thinking = true;
         _castling = [-1, -1];
-        
-        /*console.time("negamax")
-        var negaMaxObj = negaMax(negaMaxDepth, -Infinity, +Infinity);
-        console.timeEnd("negamax")*/
-        
         console.time("iterativeNegaMax");
         var negaMaxObj = iterativeNegaMax();
         console.timeEnd("iterativeNegaMax");
-        
-        if (useTranspo) {
-            console.log("Transpo.size: " + transpo.size);
-        }
-        
         _thinking = false;
         _castling = [-1, -1];
         if (negaMaxObj.moves.length) {
             console.log("Best move: " + negaMaxObj.score + " [" + negaMaxObj.moves.map(moveToStr).join(", ") + "]");
+            if (options.useTranspo) console.log("Transpo size : " + transpo.size);
             return negaMaxObj.moves[0];
         }
     }
@@ -1072,8 +1071,8 @@
     
     // Get the best move using iterative deepening
     function iterativeNegaMax() {
-        var negaMaxObj, stats, moves = undefined;
-        for (var depth = 1; depth < negaMaxDepth; depth ++) {
+        var negaMaxObj, stats, moves;
+        for (var depth = 1; depth < options.negaMaxDepth; depth ++) {
             // Get the negaMax for each depth
             negaMaxObj = negaMax(depth, -Infinity, +Infinity, moves);
             if (negaMaxObj.score === -MATE) return negaMaxObj;
@@ -1087,68 +1086,8 @@
             });
         }
         // Final depth
-        return negaMax(negaMaxDepth, -Infinity, +Infinity, moves);
+        return negaMax(options.negaMaxDepth, -Infinity, +Infinity, moves);
     }
-
-    /*
-    // Parrallel thread intents
-    var _start, _moves, _workers, _scores, _results;
-    function parallelNegaMax() {
-        _start = new Date();
-        _moves = getLegalMoves(pos.colorToPlay);
-        _workers = _moves.length;
-        _scores = new Array(_moves.length);
-        _results = new Array(_moves.length);
-        _moves.forEach(function(m, i) {
-            // Launch a worker for each move
-            var w = new Worker("js/dumb-thinker.js");
-            w.addEventListener("message", thinkerDone);
-            w.postMessage(JSON.stringify(game));
-            w.postMessage(JSON.stringify({index: i}));
-            w.postMessage(JSON.stringify(m));
-        });
-    }
-
-    function thinkerDone(e) {
-        var obj = JSON.parse(e.data);
-        _results[obj.index] = obj.negamax;
-        _scores[obj.index] = - obj.negamax.score;
-        _workers --;
-        if (_workers === 0) allThinkersDone();
-    }
-
-    function allThinkersDone() {
-        // Get the best move in array
-        var bestScore = Math.max(..._scores);
-        var bestMoves;
-        for (var i = 0; i < _moves.length; i ++) {
-            if (_scores[i] === bestScore) {
-                bestMoves = _results[i].moves;
-                bestMoves.unshift(_moves[i]);
-                break;
-            }
-        }
-        var end = new Date();
-        console.log("parallelNegaMax thought for " + (end - _start) + "ms");
-        console.log("Best move: " + bestScore + " [" + bestMoves.map(moveToStr).join(", ") + "]");
-    }
-
-    function workerNegaMax() {
-        // Launch one worker to find the best move
-        _start = new Date();
-        var w = new Worker("js/dumb-thinker2.js");
-        w.addEventListener("message", workerDone);
-        w.postMessage(JSON.stringify(game));
-    }
-
-    function workerDone(e) {
-        // Get worker message
-        var negaMaxObj = JSON.parse(e.data);
-        var end = new Date();
-        console.log("Worker Negamax thought for " + (end - _start) + "ms");
-        console.log("NegaMax(" + negaMaxDepth + "): " + negaMaxObj.score + " [" + negaMaxObj.moves.map(moveToStr).join(", ") + "]");
-    }
-    */
 
     // Exports
     window.chess = {
@@ -1162,24 +1101,24 @@
             return getLegalMoves(pos.colorToPlay);
         },
         play : function(move) {
-            play(move);
+            play(move, true);
             history.push(move);
         },
         unplay : function(move) {
-            unplay(move);
+            unplay(move, true);
             history.pop();
         },
         setLevel : function(level) {
             if (level == "EASY") {
-                negaMaxDepth = 3;
+                options.negaMaxDepth = 3;
             } else if (level == "HARD") {
-                negaMaxDepth = 5;
+                options.negaMaxDepth = 5;
             } else {
-                negaMaxDepth = 4;
+                options.negaMaxDepth = 4;
             }
         },
         getLevel : function() {
-            return (negaMaxDepth === 3 ? "EASY" : (negaMaxDepth === 5 ? "HARD" : "MEDIUM"));
+            return (options.negaMaxDepth === 3 ? "EASY" : (options.negaMaxDepth === 5 ? "HARD" : "MEDIUM"));
         },
         getBestMove : getBestMove,
         moveToStr : moveToStr,
