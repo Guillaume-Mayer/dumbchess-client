@@ -267,7 +267,7 @@ function computerPlay() {
 		$("thinking").innerHTML = chess.moveToStr(move);
 		setTimeout(resetSelection, 800);
 		// Check win
-		if (chess.getLegalMoves(chess.colorToPlay()).length === 0) {
+		if (chess.getLegalMoves().length === 0) {
 			// Lose or draw
 			$("thinking").style.visibility = "hidden";
 			// Show popup
@@ -495,7 +495,7 @@ function restart() {
 
 // Called by dumb-client
 function getLegalMove(row1, col1, row2, col2, promote) {
-	var legal = chess.getLegalMoves(chess.colorToPlay()).filter(function(m) {
+	var legal = chess.getLegalMoves().filter(function(m) {
 		return m.row1 === row1 && m.col1 === col1 && m.row2 === row2 && m.col2 === col2 && m.promote === promote;
 	});
 	if (legal.length === 1) return legal[0];
