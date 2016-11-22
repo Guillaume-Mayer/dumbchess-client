@@ -512,12 +512,6 @@ function toggleLevel() {
 	$("toggleLevel").setAttribute("class", "token " + chess.getLevel());
 }
 
-// Toggle Transpo ON/OFF
-function toggleTranspo() {
-	chess.options.useTranspo = !chess.options.useTranspo;
-	$("toggleTranspo").setAttribute("class", "token " + (chess.options.useTranspo ? "ON" : "OFF"));
-}
-
 // Toggle Quiescence ON/OFF
 function toggleQuiescence() {
 	chess.options.useQuiescence = !chess.options.useQuiescence;

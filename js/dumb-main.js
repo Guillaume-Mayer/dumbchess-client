@@ -28,7 +28,6 @@ $("rotateBoard"         ).addEventListener("click", rotateBoard);
 $("unplayLastMove"      ).addEventListener("click", unplayLastMove);
 $("restartGame"         ).addEventListener("click", restartGame);
 $("toggleLevel"         ).addEventListener("click", toggleLevel);
-$("toggleTranspo"       ).addEventListener("click", toggleTranspo);
 $("toggleQuiescence"    ).addEventListener("click", toggleQuiescence);
 
 // Init promotion popup
