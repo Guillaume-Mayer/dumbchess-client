@@ -81,12 +81,7 @@
         twoPushCol : -1,
         // Half-move counter
         halfMoveCount : 0,
-        // Repetition map
-        repetition : new Map()
     };
-
-    // Add initial pos to repetition map
-    pos.repetition.set(posKey(), 1);
 
     // Kings positions
     var kingRow = [7, 0];
@@ -851,12 +846,12 @@
         }
     }
 
-    // Check 50 moves draw rule and threefold repetition
+    // Check 50 moves rule and threefold repetition
     function isDraw() {
-        if (pos.halfMoveCount < 8) return false;
         // 50 moves
         if (pos.halfMoveCount >= 100) return true;
         // Threefold repetition
+        // TODO
         return false;
     }
 
@@ -932,7 +927,7 @@
             }
             // Dubbled pawns malus
             if (colCount[color] > 1) score += dubbled*(colCount[color] - 1);
-            if (colCount[1 - color] > 1) score -= dubbled*(colCount[1 - color] - 1)
+            if (colCount[1 - color] > 1) score -= dubbled*(colCount[1 - color] - 1);
         }
         // Beginning phase
         if (history.length + negaMaxDepth <= 48) {
